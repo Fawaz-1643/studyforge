@@ -11,6 +11,11 @@ const COURSE_COLORS = [
   { name: "Coral", value: "#ef7e75" },
   { name: "Pink", value: "#e884c4" },
 ];
+const TIMER_MODES = [
+  { id: "focus", label: "Focus", durationSeconds: 25 * 60 },
+  { id: "short-break", label: "Short Break", durationSeconds: 5 * 60 },
+  { id: "long-break", label: "Long Break", durationSeconds: 15 * 60 },
+];
 
 function loadCourses() {
   try {
@@ -48,6 +53,17 @@ function loadProfile() {
 
 function createCourseId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+}
+
+function getTimerMode(modeId) {
+  return TIMER_MODES.find((mode) => mode.id === modeId) ?? TIMER_MODES[0];
+}
+
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function BrandMark() {
@@ -515,13 +531,95 @@ function ProfileView({ profile, onSave }) {
   );
 }
 
+function TimerView({
+  modeId,
+  onModeChange,
+  onPause,
+  onReset,
+  onStart,
+  remainingSeconds,
+  status,
+}) {
+  const activeMode = getTimerMode(modeId);
+  const primaryAction = status === "running" ? onPause : onStart;
+  const primaryLabel =
+    status === "running" ? "Pause" : status === "paused" ? "Resume" : "Start";
+
+  return (
+    <section className="page-content timer-view" aria-labelledby="timer-title">
+      <div className="page-heading timer-heading">
+        <div>
+          <div className="eyebrow">
+            <span className="timer-dot" />
+            Study timer
+          </div>
+          <h1 id="timer-title">Make this time count</h1>
+          <p className="page-copy">
+            Choose a mode, start the clock, and give one session your attention.
+          </p>
+        </div>
+      </div>
+
+      <section className="timer-panel" aria-label={`${activeMode.label} timer`}>
+        <div className="timer-modes" aria-label="Timer mode">
+          {TIMER_MODES.map((mode) => (
+            <button
+              aria-pressed={modeId === mode.id}
+              className="timer-mode-button"
+              key={mode.id}
+              onClick={() => onModeChange(mode.id)}
+              type="button"
+            >
+              {mode.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="timer-display">
+          <p className="section-kicker">{activeMode.label}</p>
+          <p aria-atomic="true" aria-live="off" className="timer-time">
+            {formatTime(remainingSeconds)}
+          </p>
+          <p className="timer-state">
+            {status === "running"
+              ? "Timer running"
+              : status === "paused"
+                ? "Timer paused"
+                : "Ready when you are"}
+          </p>
+        </div>
+
+        <div className="timer-controls">
+          <button
+            className="button button--primary timer-primary-button"
+            disabled={remainingSeconds === 0}
+            onClick={primaryAction}
+            type="button"
+          >
+            {primaryLabel}
+          </button>
+          <button className="button button--secondary" onClick={onReset} type="button">
+            Reset
+          </button>
+        </div>
+      </section>
+    </section>
+  );
+}
+
 export default function App() {
   const [courses, setCourses] = useState(loadCourses);
   const [profile, setProfile] = useState(loadProfile);
   const [activeView, setActiveView] = useState("dashboard");
+  const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
+  const [remainingSeconds, setRemainingSeconds] = useState(
+    TIMER_MODES[0].durationSeconds,
+  );
+  const [timerStatus, setTimerStatus] = useState("idle");
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const timerEndTimeRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -555,6 +653,37 @@ export default function App() {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isFormOpen, courseToDelete]);
+
+  useEffect(() => {
+    if (timerStatus !== "running") {
+      return undefined;
+    }
+
+    function updateRemainingTime() {
+      if (timerEndTimeRef.current === null) {
+        return;
+      }
+
+      const millisecondsLeft = Math.max(0, timerEndTimeRef.current - Date.now());
+      const nextRemainingSeconds = Math.ceil(millisecondsLeft / 1000);
+
+      setRemainingSeconds(nextRemainingSeconds);
+
+      if (nextRemainingSeconds === 0) {
+        timerEndTimeRef.current = null;
+        setTimerStatus("idle");
+      }
+    }
+
+    updateRemainingTime();
+    const timerInterval = window.setInterval(updateRemainingTime, 250);
+    document.addEventListener("visibilitychange", updateRemainingTime);
+
+    return () => {
+      window.clearInterval(timerInterval);
+      document.removeEventListener("visibilitychange", updateRemainingTime);
+    };
+  }, [timerStatus]);
 
   function openAddForm() {
     setEditingCourse(null);
@@ -595,6 +724,43 @@ export default function App() {
     setCourseToDelete(null);
   }
 
+  function startTimer() {
+    if (remainingSeconds === 0) {
+      return;
+    }
+
+    timerEndTimeRef.current = Date.now() + remainingSeconds * 1000;
+    setTimerStatus("running");
+  }
+
+  function pauseTimer() {
+    if (timerEndTimeRef.current === null) {
+      return;
+    }
+
+    const millisecondsLeft = Math.max(0, timerEndTimeRef.current - Date.now());
+    const nextRemainingSeconds = Math.ceil(millisecondsLeft / 1000);
+
+    timerEndTimeRef.current = null;
+    setRemainingSeconds(nextRemainingSeconds);
+    setTimerStatus(nextRemainingSeconds === 0 ? "idle" : "paused");
+  }
+
+  function resetTimer() {
+    timerEndTimeRef.current = null;
+    setRemainingSeconds(getTimerMode(timerModeId).durationSeconds);
+    setTimerStatus("idle");
+  }
+
+  function changeTimerMode(nextModeId) {
+    const nextMode = getTimerMode(nextModeId);
+
+    timerEndTimeRef.current = null;
+    setTimerModeId(nextMode.id);
+    setRemainingSeconds(nextMode.durationSeconds);
+    setTimerStatus("idle");
+  }
+
   return (
     <main className="app-shell">
       <div className="ambient-glow ambient-glow--top" />
@@ -613,6 +779,7 @@ export default function App() {
           {[
             { id: "dashboard", label: "Dashboard" },
             { id: "courses", label: "Courses" },
+            { id: "timer", label: "Timer" },
             { id: "profile", label: "Profile" },
           ].map((item) => (
             <button
@@ -627,7 +794,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–3</span>
+        <span className="milestone-badge">Milestones 1–4</span>
       </header>
 
       {activeView === "dashboard" && (
@@ -648,10 +815,21 @@ export default function App() {
       {activeView === "profile" && (
         <ProfileView profile={profile} onSave={setProfile} />
       )}
+      {activeView === "timer" && (
+        <TimerView
+          modeId={timerModeId}
+          onModeChange={changeTimerMode}
+          onPause={pauseTimer}
+          onReset={resetTimer}
+          onStart={startTimer}
+          remainingSeconds={remainingSeconds}
+          status={timerStatus}
+        />
+      )}
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.3</span>
+        <span>StudyForge v0.4</span>
       </footer>
 
       {isFormOpen && (

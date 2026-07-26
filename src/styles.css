@@ -272,6 +272,34 @@ footer {
   content: "";
 }
 
+.nav-icon--timer {
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.nav-icon--timer::before {
+  position: absolute;
+  top: -3px;
+  left: 4px;
+  width: 5px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  content: "";
+}
+
+.nav-icon--timer::after {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  width: 1.5px;
+  height: 5px;
+  border-radius: 2px;
+  background: currentColor;
+  box-shadow: 2px 3px 0 -0.25px currentColor;
+  content: "";
+}
+
 .page-content {
   flex: 1;
   padding: 72px 0 90px;
@@ -298,6 +326,14 @@ footer {
   border-radius: 50%;
   background: var(--success);
   box-shadow: 0 0 0 4px rgba(97, 214, 167, 0.1);
+}
+
+.timer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(155, 135, 245, 0.1);
 }
 
 h1,
@@ -733,6 +769,94 @@ h1 {
   align-self: center;
 }
 
+.timer-panel {
+  width: min(760px, 100%);
+  margin: 48px auto 0;
+  padding: 27px;
+  border: 1px solid var(--surface-border);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(155, 135, 245, 0.14), transparent 50%),
+    var(--surface);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px);
+}
+
+.timer-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(8, 10, 16, 0.45);
+}
+
+.timer-mode-button {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #7f8494;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.timer-mode-button:hover {
+  color: #d7d9e1;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.timer-mode-button[aria-pressed="true"] {
+  border-color: rgba(155, 135, 245, 0.22);
+  color: #eeeaff;
+  background: rgba(155, 135, 245, 0.13);
+}
+
+.timer-display {
+  padding: 66px 20px 60px;
+  text-align: center;
+}
+
+.timer-display .section-kicker {
+  margin-bottom: 14px;
+  color: var(--accent-bright);
+}
+
+.timer-time {
+  margin-bottom: 12px;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(5rem, 15vw, 8.5rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+  text-shadow: 0 12px 50px rgba(155, 135, 245, 0.18);
+}
+
+.timer-state {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.timer-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.timer-controls .button {
+  min-width: 118px;
+}
+
+.timer-primary-button {
+  min-width: 150px;
+}
+
 .course-summary {
   display: flex;
   align-items: center;
@@ -1101,6 +1225,7 @@ fieldset {
 button:focus-visible,
 input:focus-visible,
 a:focus-visible,
+.timer-mode-button:focus-visible,
 .color-option:has(input:focus-visible) {
   outline: 3px solid rgba(192, 179, 255, 0.48);
   outline-offset: 3px;
@@ -1158,6 +1283,12 @@ a:focus-visible,
     font-size: 0.65rem;
   }
 
+  .nav-button {
+    gap: 6px;
+    padding-inline: 6px;
+    font-size: 0.72rem;
+  }
+
   .page-content {
     padding: 50px 0 64px;
   }
@@ -1197,6 +1328,33 @@ a:focus-visible,
   .profile-panel {
     margin-top: 37px;
     padding: 22px 19px;
+  }
+
+  .timer-panel {
+    margin-top: 37px;
+    padding: 19px;
+    border-radius: 20px;
+  }
+
+  .timer-mode-button {
+    padding-inline: 7px;
+    font-size: 0.72rem;
+  }
+
+  .timer-display {
+    padding: 54px 0 50px;
+  }
+
+  .timer-time {
+    font-size: clamp(4.5rem, 25vw, 7rem);
+  }
+
+  .timer-controls {
+    flex-direction: column;
+  }
+
+  .timer-controls .button {
+    width: 100%;
   }
 
   .profile-fields {
