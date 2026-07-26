@@ -1,0 +1,23 @@
+# Installed packages
+node_modules/
+
+# Production build
+dist/
+
+# Codex scratch files
+work/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Editor and operating-system files
+.DS_Store
+.vscode/
+.idea/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
