@@ -2,9 +2,8 @@
 
 ## Current milestone
 
-Milestones 1-11.5 are complete. Milestone 12 pre-deployment release
-preparation is complete for version 1.0.0. Commit, push, and Vercel deployment
-remain pending their separate approval gates.
+Milestones 1-12 are complete. StudyForge version 1.0.0 is publicly released at
+[studyforge-gray-eight.vercel.app](https://studyforge-gray-eight.vercel.app).
 
 ## Technical foundation
 
@@ -395,8 +394,7 @@ failures fall back to in-memory operation.
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: pre-deployment release checks passing on July 26,
-  2026
+- Latest verified status: production release checks passing on July 27, 2026
 - Build result: 34 modules transformed; production bundle completed
   successfully in 383 ms
 - Production output: 0.65 kB HTML, 82.98 kB CSS, and 295.19 kB JavaScript
@@ -424,15 +422,33 @@ failures fall back to in-memory operation.
 - Seven privacy-safe repository screenshots were captured and visually checked
   for readability, current interface accuracy, relative paths, and absence of
   private data or browser chrome
+- Vercel detected the Vite application correctly with project root `./`, build
+  command `npm run build`, output directory `dist`, and no environment
+  variables
+- The first production deployment reached Vercel `Ready` status from release
+  source commit `f424dffa0d57d35873b87b71b51b9f4153b0987f`
+- The public application passed all six views at wide desktop and narrow mobile
+  widths without horizontal page or navigation overflow
+- A fresh production origin opened Dashboard, direct reloads succeeded, the
+  last valid view restored, and StudyForge brand navigation returned home
+- Profile setup updated the production Dashboard immediately and survived a
+  normal reload through device-local browser storage
+- A running production countdown returned to a fresh idle `25:00` Focus session
+  after reload without adding History, task progress, or XP
+- The public browser console remained free of warnings and errors
+- The production project has zero function invocations and adds no account
+  system, backend, database, environment variables, or cloud persistence
+- Malformed-data and unavailable-storage fallback checks passed against the
+  exact release source before deployment; the deployed bundle is built from
+  that unchanged commit
+- Public URL:
+  [studyforge-gray-eight.vercel.app](https://studyforge-gray-eight.vercel.app)
 - Project version: 1.0.0
 
-## Release work remaining
+## Release status
 
-- Record the approved release commit after the user reviews the diff
-- Push the approved release to the existing GitHub repository
-- Deploy the approved commit to Vercel
-- Verify the public application, refresh behavior, responsive layouts, local
-  persistence, and malformed-data recovery
-- Add the final Git commit and public URL to this handoff
+Milestone 12 is complete. The remaining repository action is the
+documentation-only follow-up that records the public URL and these production
+verification results.
 
 No Stage 1 or Stage 2 expansion work is part of this release.

@@ -9,7 +9,7 @@ rewards in a responsive dark interface.
 
 **Status:** Milestones 1-12
 
-**Live app:** Added after the approved Vercel deployment
+**Live app:** [studyforge-gray-eight.vercel.app](https://studyforge-gray-eight.vercel.app)
 
 > StudyForge has no accounts, backend, database, analytics service, or cloud
 > sync. Each visitor's saved data stays in that browser's `localStorage`.
