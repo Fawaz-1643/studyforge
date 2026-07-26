@@ -11,10 +11,18 @@ const COURSE_COLORS = [
   { name: "Coral", value: "#ef7e75" },
   { name: "Pink", value: "#e884c4" },
 ];
+const DEFAULT_TIMER_SETTINGS = {
+  focusMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  focusSessionsPerCycle: 4,
+  autoStart: false,
+  soundEnabled: true,
+};
 const TIMER_MODES = [
-  { id: "focus", label: "Focus", durationSeconds: 25 * 60 },
-  { id: "short-break", label: "Short Break", durationSeconds: 5 * 60 },
-  { id: "long-break", label: "Long Break", durationSeconds: 15 * 60 },
+  { id: "focus", label: "Focus", durationKey: "focusMinutes" },
+  { id: "short-break", label: "Short Break", durationKey: "shortBreakMinutes" },
+  { id: "long-break", label: "Long Break", durationKey: "longBreakMinutes" },
 ];
 
 function loadCourses() {
@@ -57,6 +65,11 @@ function createCourseId() {
 
 function getTimerMode(modeId) {
   return TIMER_MODES.find((mode) => mode.id === modeId) ?? TIMER_MODES[0];
+}
+
+function getTimerDurationSeconds(modeId, settings) {
+  const mode = getTimerMode(modeId);
+  return settings[mode.durationKey] * 60;
 }
 
 function formatTime(totalSeconds) {
@@ -531,13 +544,193 @@ function ProfileView({ profile, onSave }) {
   );
 }
 
+function TimerSettings({
+  onRestoreDefaults,
+  onSaveDurations,
+  onToggleAutoStart,
+  onToggleSound,
+  settings,
+}) {
+  const [draftSettings, setDraftSettings] = useState({
+    focusMinutes: String(settings.focusMinutes),
+    shortBreakMinutes: String(settings.shortBreakMinutes),
+    longBreakMinutes: String(settings.longBreakMinutes),
+    focusSessionsPerCycle: String(settings.focusSessionsPerCycle),
+  });
+  const [settingsError, setSettingsError] = useState("");
+
+  useEffect(() => {
+    setDraftSettings({
+      focusMinutes: String(settings.focusMinutes),
+      shortBreakMinutes: String(settings.shortBreakMinutes),
+      longBreakMinutes: String(settings.longBreakMinutes),
+      focusSessionsPerCycle: String(settings.focusSessionsPerCycle),
+    });
+    setSettingsError("");
+  }, [
+    settings.focusMinutes,
+    settings.shortBreakMinutes,
+    settings.longBreakMinutes,
+    settings.focusSessionsPerCycle,
+  ]);
+
+  function updateDraftSetting(key, value) {
+    setDraftSettings((currentSettings) => ({
+      ...currentSettings,
+      [key]: value,
+    }));
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const durationKeys = ["focusMinutes", "shortBreakMinutes", "longBreakMinutes"];
+    const durationsAreValid = durationKeys.every((key) => {
+      const value = draftSettings[key];
+      return /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 180;
+    });
+    const cycleValue = draftSettings.focusSessionsPerCycle;
+    const cycleIsValid =
+      /^\d+$/.test(cycleValue) && Number(cycleValue) >= 1 && Number(cycleValue) <= 99;
+
+    if (!durationsAreValid) {
+      setSettingsError("Enter each duration as a whole number from 1 to 180 minutes.");
+      return;
+    }
+
+    if (!cycleIsValid) {
+      setSettingsError("Enter a Focus sessions value from 1 to 99.");
+      return;
+    }
+
+    setSettingsError("");
+    onSaveDurations({
+      focusMinutes: Number(draftSettings.focusMinutes),
+      shortBreakMinutes: Number(draftSettings.shortBreakMinutes),
+      longBreakMinutes: Number(draftSettings.longBreakMinutes),
+      focusSessionsPerCycle: Number(draftSettings.focusSessionsPerCycle),
+    });
+  }
+
+  return (
+    <section className="timer-settings" aria-labelledby="timer-settings-title">
+      <div className="timer-settings-heading">
+        <div>
+          <p className="section-kicker">Preferences</p>
+          <h2 id="timer-settings-title">Timer settings</h2>
+        </div>
+        <button
+          className="text-button"
+          onClick={onRestoreDefaults}
+          type="button"
+        >
+          Restore defaults
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="timer-duration-fields">
+          {[
+            { key: "focusMinutes", label: "Focus" },
+            { key: "shortBreakMinutes", label: "Short Break" },
+            { key: "longBreakMinutes", label: "Long Break" },
+          ].map((field) => (
+            <label key={field.key}>
+              <span className="field-label">{field.label}</span>
+              <span className="number-input-wrap">
+                <input
+                  aria-describedby={settingsError ? "timer-settings-error" : undefined}
+                  className="text-input timer-number-input"
+                  inputMode="numeric"
+                  max="180"
+                  min="1"
+                  onChange={(event) => updateDraftSetting(field.key, event.target.value)}
+                  step="1"
+                  type="number"
+                  value={draftSettings[field.key]}
+                />
+                <span>min</span>
+              </span>
+            </label>
+          ))}
+          <label>
+            <span className="field-label">Focus sessions per cycle</span>
+            <span className="number-input-wrap">
+              <input
+                aria-describedby={settingsError ? "timer-settings-error" : undefined}
+                className="text-input timer-number-input"
+                inputMode="numeric"
+                max="99"
+                min="1"
+                onChange={(event) =>
+                  updateDraftSetting("focusSessionsPerCycle", event.target.value)
+                }
+                step="1"
+                type="number"
+                value={draftSettings.focusSessionsPerCycle}
+              />
+              <span>sessions</span>
+            </span>
+          </label>
+        </div>
+
+        <div className="timer-settings-actions">
+          <p
+            className={`form-message${settingsError ? " form-message--error" : ""}`}
+            id="timer-settings-error"
+            role={settingsError ? "alert" : undefined}
+          >
+            {settingsError || "Changes reset the current timer without completing it."}
+          </p>
+          <button className="button button--secondary" type="submit">
+            Apply settings
+          </button>
+        </div>
+      </form>
+
+      <div className="timer-toggles">
+        <label className="toggle-row">
+          <span>
+            <strong>Auto-start next timer</strong>
+            <small>Begin the next Focus or Break timer automatically.</small>
+          </span>
+          <input
+            checked={settings.autoStart}
+            onChange={(event) => onToggleAutoStart(event.target.checked)}
+            type="checkbox"
+          />
+          <span className="toggle-control" aria-hidden="true" />
+        </label>
+        <label className="toggle-row">
+          <span>
+            <strong>Completion sound</strong>
+            <small>Play a short sound when a timer reaches zero.</small>
+          </span>
+          <input
+            checked={settings.soundEnabled}
+            onChange={(event) => onToggleSound(event.target.checked)}
+            type="checkbox"
+          />
+          <span className="toggle-control" aria-hidden="true" />
+        </label>
+      </div>
+    </section>
+  );
+}
+
 function TimerView({
+  completedFocusSessions,
+  completionMessage,
   modeId,
   onModeChange,
   onPause,
   onReset,
+  onRestoreDefaults,
+  onSaveDurations,
   onStart,
+  onToggleAutoStart,
+  onToggleSound,
   remainingSeconds,
+  settings,
   status,
 }) {
   const activeMode = getTimerMode(modeId);
@@ -587,6 +780,21 @@ function TimerView({
                 ? "Timer paused"
                 : "Ready when you are"}
           </p>
+          <p className="cycle-progress">
+            {completedFocusSessions} of {settings.focusSessionsPerCycle} Focus sessions
+            completed in this cycle
+          </p>
+        </div>
+
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className={`completion-message${
+            completionMessage ? " completion-message--visible" : ""
+          }`}
+          role="status"
+        >
+          {completionMessage}
         </div>
 
         <div className="timer-controls">
@@ -603,6 +811,14 @@ function TimerView({
           </button>
         </div>
       </section>
+
+      <TimerSettings
+        onRestoreDefaults={onRestoreDefaults}
+        onSaveDurations={onSaveDurations}
+        onToggleAutoStart={onToggleAutoStart}
+        onToggleSound={onToggleSound}
+        settings={settings}
+      />
     </section>
   );
 }
@@ -613,13 +829,20 @@ export default function App() {
   const [activeView, setActiveView] = useState("dashboard");
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
   const [remainingSeconds, setRemainingSeconds] = useState(
-    TIMER_MODES[0].durationSeconds,
+    DEFAULT_TIMER_SETTINGS.focusMinutes * 60,
   );
   const [timerStatus, setTimerStatus] = useState("idle");
+  const [timerSettings, setTimerSettings] = useState({
+    ...DEFAULT_TIMER_SETTINGS,
+  });
+  const [completedFocusSessions, setCompletedFocusSessions] = useState(0);
+  const [completionMessage, setCompletionMessage] = useState("");
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const timerEndTimeRef = useRef(null);
+  const completionHandledRef = useRef(false);
+  const audioContextRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -670,8 +893,7 @@ export default function App() {
       setRemainingSeconds(nextRemainingSeconds);
 
       if (nextRemainingSeconds === 0) {
-        timerEndTimeRef.current = null;
-        setTimerStatus("idle");
+        finishTimer(timerEndTimeRef.current);
       }
     }
 
@@ -683,7 +905,15 @@ export default function App() {
       window.clearInterval(timerInterval);
       document.removeEventListener("visibilitychange", updateRemainingTime);
     };
-  }, [timerStatus]);
+  }, [completedFocusSessions, timerModeId, timerSettings, timerStatus]);
+
+  useEffect(
+    () => () => {
+      audioContextRef.current?.close();
+      audioContextRef.current = null;
+    },
+    [],
+  );
 
   function openAddForm() {
     setEditingCourse(null);
@@ -724,12 +954,102 @@ export default function App() {
     setCourseToDelete(null);
   }
 
+  function prepareCompletionSound(force = false) {
+    if ((!timerSettings.soundEnabled && !force) || audioContextRef.current) {
+      return;
+    }
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContext) {
+      return;
+    }
+
+    audioContextRef.current = new AudioContext();
+    audioContextRef.current.resume().catch(() => {
+      // The timer and in-app feedback remain usable if audio is blocked.
+    });
+  }
+
+  function playCompletionSound() {
+    const audioContext = audioContextRef.current;
+
+    if (!timerSettings.soundEnabled || !audioContext) {
+      return;
+    }
+
+    try {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const startTime = audioContext.currentTime;
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(660, startTime);
+      oscillator.frequency.setValueAtTime(880, startTime + 0.09);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.24);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + 0.25);
+    } catch {
+      // The visible completion message is the fallback when audio cannot play.
+    }
+  }
+
+  function finishTimer(completedAt = Date.now()) {
+    if (completionHandledRef.current) {
+      return;
+    }
+
+    completionHandledRef.current = true;
+    timerEndTimeRef.current = null;
+
+    const completedMode = getTimerMode(timerModeId);
+    let nextModeId = "focus";
+
+    if (timerModeId === "focus") {
+      const nextFocusCount = completedFocusSessions + 1;
+      const cycleIsComplete =
+        nextFocusCount >= timerSettings.focusSessionsPerCycle;
+
+      nextModeId = cycleIsComplete ? "long-break" : "short-break";
+      setCompletedFocusSessions(cycleIsComplete ? 0 : nextFocusCount);
+    }
+
+    const nextMode = getTimerMode(nextModeId);
+    const nextDurationSeconds = getTimerDurationSeconds(
+      nextModeId,
+      timerSettings,
+    );
+    const nextAction = timerSettings.autoStart
+      ? `${nextMode.label} started automatically.`
+      : `${nextMode.label} is ready.`;
+
+    playCompletionSound();
+    setCompletionMessage(`${completedMode.label} complete. ${nextAction}`);
+    setTimerModeId(nextModeId);
+    setRemainingSeconds(nextDurationSeconds);
+
+    if (timerSettings.autoStart) {
+      completionHandledRef.current = false;
+      timerEndTimeRef.current = completedAt + nextDurationSeconds * 1000;
+      setTimerStatus("running");
+    } else {
+      setTimerStatus("idle");
+    }
+  }
+
   function startTimer() {
     if (remainingSeconds === 0) {
       return;
     }
 
+    prepareCompletionSound();
+    completionHandledRef.current = false;
     timerEndTimeRef.current = Date.now() + remainingSeconds * 1000;
+    setCompletionMessage("");
     setTimerStatus("running");
   }
 
@@ -741,14 +1061,21 @@ export default function App() {
     const millisecondsLeft = Math.max(0, timerEndTimeRef.current - Date.now());
     const nextRemainingSeconds = Math.ceil(millisecondsLeft / 1000);
 
+    if (nextRemainingSeconds === 0) {
+      finishTimer(timerEndTimeRef.current);
+      return;
+    }
+
     timerEndTimeRef.current = null;
     setRemainingSeconds(nextRemainingSeconds);
-    setTimerStatus(nextRemainingSeconds === 0 ? "idle" : "paused");
+    setTimerStatus("paused");
   }
 
   function resetTimer() {
     timerEndTimeRef.current = null;
-    setRemainingSeconds(getTimerMode(timerModeId).durationSeconds);
+    completionHandledRef.current = false;
+    setRemainingSeconds(getTimerDurationSeconds(timerModeId, timerSettings));
+    setCompletionMessage("");
     setTimerStatus("idle");
   }
 
@@ -756,9 +1083,57 @@ export default function App() {
     const nextMode = getTimerMode(nextModeId);
 
     timerEndTimeRef.current = null;
+    completionHandledRef.current = false;
     setTimerModeId(nextMode.id);
-    setRemainingSeconds(nextMode.durationSeconds);
+    setRemainingSeconds(getTimerDurationSeconds(nextMode.id, timerSettings));
+    setCompletionMessage("");
     setTimerStatus("idle");
+  }
+
+  function saveTimerDurations(nextValues) {
+    const nextSettings = { ...timerSettings, ...nextValues };
+
+    timerEndTimeRef.current = null;
+    completionHandledRef.current = false;
+    setTimerSettings(nextSettings);
+    setCompletedFocusSessions((currentCount) =>
+      Math.min(currentCount, nextSettings.focusSessionsPerCycle - 1),
+    );
+    setRemainingSeconds(getTimerDurationSeconds(timerModeId, nextSettings));
+    setCompletionMessage("Timer settings applied.");
+    setTimerStatus("idle");
+  }
+
+  function restoreTimerDefaults() {
+    const defaultSettings = { ...DEFAULT_TIMER_SETTINGS };
+
+    timerEndTimeRef.current = null;
+    completionHandledRef.current = false;
+    setTimerSettings(defaultSettings);
+    setCompletedFocusSessions((currentCount) =>
+      Math.min(currentCount, defaultSettings.focusSessionsPerCycle - 1),
+    );
+    setRemainingSeconds(getTimerDurationSeconds(timerModeId, defaultSettings));
+    setCompletionMessage("Default timer settings restored.");
+    setTimerStatus("idle");
+  }
+
+  function toggleAutoStart(isEnabled) {
+    setTimerSettings((currentSettings) => ({
+      ...currentSettings,
+      autoStart: isEnabled,
+    }));
+  }
+
+  function toggleCompletionSound(isEnabled) {
+    if (isEnabled) {
+      prepareCompletionSound(true);
+    }
+
+    setTimerSettings((currentSettings) => ({
+      ...currentSettings,
+      soundEnabled: isEnabled,
+    }));
   }
 
   return (
@@ -794,7 +1169,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–4</span>
+        <span className="milestone-badge">Milestones 1–5</span>
       </header>
 
       {activeView === "dashboard" && (
@@ -817,19 +1192,26 @@ export default function App() {
       )}
       {activeView === "timer" && (
         <TimerView
+          completedFocusSessions={completedFocusSessions}
+          completionMessage={completionMessage}
           modeId={timerModeId}
           onModeChange={changeTimerMode}
           onPause={pauseTimer}
           onReset={resetTimer}
+          onRestoreDefaults={restoreTimerDefaults}
+          onSaveDurations={saveTimerDurations}
           onStart={startTimer}
+          onToggleAutoStart={toggleAutoStart}
+          onToggleSound={toggleCompletionSound}
           remainingSeconds={remainingSeconds}
+          settings={timerSettings}
           status={timerStatus}
         />
       )}
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.4</span>
+        <span>StudyForge v0.5</span>
       </footer>
 
       {isFormOpen && (

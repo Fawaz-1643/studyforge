@@ -1,12 +1,13 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 4: accurate timer
-engine**.
+a time. This repository currently contains **Milestone 5: timer settings,
+automatic session cycles, and completion feedback**.
 
-Timer settings, tasks, statistics, and the XP system belong to later milestones.
+Tasks, statistics, persistence for timer data, and the XP system belong to later
+milestones.
 
-## What Milestones 1–4 include
+## What Milestones 1–5 include
 
 - Navigate between a dashboard, course library, timer, and student profile
 - See a simple dashboard overview of saved profile and course information
@@ -17,16 +18,21 @@ Timer settings, tasks, statistics, and the XP system belong to later milestones.
 - Edit an existing course's name or color
 - Delete a course after a confirmation step
 - Save the course list in the browser's `localStorage`
-- Switch between fixed 25-minute focus, 5-minute short break, and 15-minute long
-  break timers
+- Switch between Focus, Short Break, and Long Break timers
 - Start, pause, resume, and reset the timer
 - Keep the countdown accurate in inactive or throttled browser tabs by
   calculating from real timestamps
+- Customize all three timer durations and restore their defaults
+- Choose how many completed Focus sessions lead to a Long Break
+- Automatically move from Focus to the correct Break and from a Break to Focus
+- Optionally start the next timer automatically
+- Show an in-app completion message and optionally play a short sound
 - A responsive dark design that works on phones and larger screens
 
 The profile and courses are stored only on the device and browser where they
-were created. Clearing that browser's site data will also clear them. The timer
-is kept only in memory and resets when the page is reloaded.
+were created. Clearing that browser's site data will also clear them. The timer,
+timer settings, and cycle progress are kept only in memory and reset when the
+page is reloaded.
 
 ## Run the project locally
 
