@@ -54,11 +54,12 @@ rewards in a responsive dark interface.
 ### Run reliable Focus sessions
 
 - Switch between Focus, Short Break, and Long Break modes
-- Start, pause, resume, reset, and add one minute
+- Start, pause, resume, add one minute, skip to the next session, or reset the cycle
 - Change the temporary Focus-cycle target without changing the countdown
 - Use a timestamp-based timer that stays accurate in throttled tabs
 - Start a default unassigned 25-minute Quick Focus from Dashboard
-- Enter fullscreen or open the shared timer in Picture-in-Picture or a popup
+- Enter a fixed, responsive fullscreen presentation on laptops, tablets, and phones
+- Request portrait fullscreen on small touch devices with a safe rotate-device fallback
 - Keep the active countdown deliberately memory-only
 
 ### Understand study progress
@@ -94,8 +95,9 @@ and changes to the saved university or field of study after setup.
 
 The Timer view centers a responsive circular countdown ring. Focus uses violet,
 Short Break uses teal, and Long Break uses blue. The ring, fullscreen panel,
-floating view, Dashboard timer, task progress, History, and rewards all share
-one timer engine and one exactly-once completion path.
+Dashboard timer, task progress, History, and rewards all share one timer engine
+and one exactly-once completion path. Next session skips unfinished work without
+awarding progress, while Reset cycle returns to a fresh configured Focus cycle.
 
 Courses and Tasks provide the planning layer. Every task belongs to an existing
 course, estimates never change automatically, and neither reaching an estimate

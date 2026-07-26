@@ -41,7 +41,8 @@ Milestones 1-12 are complete. StudyForge version 1.0.0 is publicly released at
 ### Milestone 4 - Reliable focus timer
 
 - Focus, Short Break, and Long Break modes
-- Start, pause, resume, reset, and manual mode switching
+- Start, pause, resume, confirmed cycle reset, next-session skipping, and
+  manual mode switching
 - Timestamp-based countdown calculations using `Date.now()`
 - Accurate remaining time after inactive or throttled browser tabs
 
@@ -221,7 +222,7 @@ Milestones 1-12 are complete. StudyForge version 1.0.0 is publicly released at
   the first major control visible on the page
 - Play and pause sit inside the ring, with four labelled surrounding controls
   for adding one minute, adding one Focus interval to the current cycle,
-  resetting, and floating the timer
+  resetting the complete cycle, and skipping to the next session
 - A separate centred Full screen control sits beneath the larger cycle-progress
   label and expands the complete Timer panel with responsive spacing; the same
   control or the browser's Escape behavior exits full screen
@@ -230,16 +231,18 @@ Milestones 1-12 are complete. StudyForge version 1.0.0 is publicly released at
   message, and unsupported browsers expose a disabled control
 - Fullscreen presentation remains entirely ephemeral and continues using the
   original memory-only countdown, task, History, and exactly-once reward path
+- Fullscreen remains available on laptops and uses a fixed, non-scrolling
+  layout; small touch devices request portrait orientation and fall back to a
+  dedicated rotate-device state when the browser cannot lock orientation
 - Adding a Focus interval changes only the temporary current-cycle target; it
   does not add 25 minutes, persist a countdown, or award any progress
-- A user-triggered floating timer uses Document Picture-in-Picture for a true
-  always-on-top panel when supported and a compact popup fallback elsewhere
-- The floating timer is rendered from the main React tree and shares the same
-  memory-only timer state and original completion handler; it does not create a
-  second countdown, persisted target timestamp, reward path, or History path
-- Popup blocking or cancelled Picture-in-Picture produces an in-app status
-  message, reopening an existing floating timer focuses it, and closing either
-  window cleans up safely
+- Next session cancels the unfinished interval without History, XP, task,
+  achievement, streak, or cycle-progress effects, then prepares Short Break
+  after Focus or Focus after either break
+- Reset cycle returns to an idle Focus timer, clears current-cycle progress,
+  restores the saved cycle target, and preserves all previously earned History,
+  XP, achievements, and task progress; a safe-action-first confirmation protects
+  running, paused, extended, or partially completed cycles
 - Each naturally completed Focus session now earns an exact completion bonus of
   10% of its focused minutes in addition to its minute-based XP
 - Fractional XP is retained internally and in persistence, while all visible XP
@@ -395,9 +398,9 @@ failures fall back to in-memory operation.
 
 - Latest production command: `npm run build`
 - Latest verified status: production release checks passing on July 27, 2026
-- Build result: 34 modules transformed; production bundle completed
-  successfully in 383 ms
-- Production output: 0.65 kB HTML, 82.98 kB CSS, and 295.19 kB JavaScript
+- Build result: 33 modules transformed; production bundle completed
+  successfully in 426 ms
+- Production output: 0.65 kB HTML, 82.54 kB CSS, and 295.26 kB JavaScript
   before gzip
 - Focused utility checks passed for valid and invalid task input, fixed
   estimates, completion filtering, supported storage migration, no retroactive
@@ -416,9 +419,13 @@ failures fall back to in-memory operation.
 - A natural one-minute Focus session created exactly one History record,
   incremented the selected task exactly once, and awarded the expected
   minute-based and 10% completion XP exactly once
-- Pause, add-minute, add-cycle, reset, interrupted-reload, fullscreen-control,
-  and Document Picture-in-Picture checks preserved History, task progress, XP,
-  and the memory-only countdown rules
+- Pause, add-minute, add-cycle, reset, next-session, interrupted-reload, and
+  fullscreen-control checks preserved History, task progress, XP, and the
+  memory-only countdown rules
+- The Timer ring measured exactly centred at laptop, tablet, and mobile widths
+  with no horizontal overflow; fullscreen remained fixed and non-scrolling,
+  and the simulated small-touch landscape fallback exposed a visible
+  rotate-device message and fullscreen exit control
 - Seven privacy-safe repository screenshots were captured and visually checked
   for readability, current interface accuracy, relative paths, and absence of
   private data or browser chrome

@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
 import {
   countTasksForCourse,
   deleteTaskFromList,
@@ -454,7 +453,7 @@ function TimerStage({
   focusCycleTarget,
   onAddFocusInterval,
   onAddMinute,
-  onOpenPopout,
+  onNextSession,
   onPause,
   onReset,
   onStart,
@@ -499,22 +498,22 @@ function TimerStage({
       />
 
       <button
-        aria-label="Stop and reset timer"
+        aria-label="Stop the timer and reset the current Focus cycle"
         className="timer-corner-control timer-corner-control--bottom-left"
         onClick={onReset}
         type="button"
       >
         <strong aria-hidden="true">■</strong>
-        <span>Reset</span>
+        <span>Reset cycle</span>
       </button>
       <button
-        aria-label="Open the timer in a floating window"
+        aria-label={`Skip ${activeMode.label} and move to the next session`}
         className="timer-corner-control timer-corner-control--bottom-right"
-        onClick={onOpenPopout}
+        onClick={onNextSession}
         type="button"
       >
-        <strong aria-hidden="true">↗</strong>
-        <span>Float</span>
+        <strong aria-hidden="true">→</strong>
+        <span>Next session</span>
       </button>
 
       <p className="cycle-progress">
@@ -522,79 +521,6 @@ function TimerStage({
         in this cycle
       </p>
     </div>
-  );
-}
-
-function TimerPopout({
-  activeTask,
-  modeId,
-  onClose,
-  onModeChange,
-  onPause,
-  onReset,
-  onStart,
-  remainingSeconds,
-  status,
-  totalSeconds,
-}) {
-  const activeMode = getTimerMode(modeId);
-  const primaryAction = status === "running" ? onPause : onStart;
-  const primaryLabel =
-    status === "running" ? "Pause" : status === "paused" ? "Resume" : "Start";
-
-  return (
-    <main className="timer-popout-shell" data-timer-mode={modeId}>
-      <header className="timer-popout-header">
-        <div>
-          <span className="timer-popout-brand">StudyForge</span>
-          <strong>Focus companion</strong>
-        </div>
-        <button
-          aria-label="Close popout timer"
-          className="icon-button"
-          onClick={onClose}
-          type="button"
-        >
-          ×
-        </button>
-      </header>
-
-      <div className="timer-modes timer-popout-modes" aria-label="Timer mode">
-        {TIMER_MODES.map((mode) => (
-          <button
-            aria-pressed={modeId === mode.id}
-            className="timer-mode-button"
-            key={mode.id}
-            onClick={() => onModeChange(mode.id)}
-            type="button"
-          >
-            {mode.label}
-          </button>
-        ))}
-      </div>
-
-      <TimerDial
-        activeMode={activeMode}
-        compact
-        onPrimaryAction={primaryAction}
-        primaryDisabled={remainingSeconds === 0}
-        primaryLabel={primaryLabel}
-        remainingSeconds={remainingSeconds}
-        status={status}
-        totalSeconds={totalSeconds}
-      />
-
-      <p className="timer-popout-task">
-        <span>Current task</span>
-        <strong>{activeTask?.title ?? "No active task"}</strong>
-      </p>
-
-      <div className="timer-controls timer-popout-controls">
-        <button className="button button--secondary" onClick={onReset} type="button">
-          Reset
-        </button>
-      </div>
-    </main>
   );
 }
 
@@ -673,7 +599,7 @@ function DashboardQuickTimer({
           </button>
           {status !== "idle" && (
             <button className="text-button" onClick={onReset} type="button">
-              Reset timer
+              Reset cycle
             </button>
           )}
         </div>
@@ -1814,7 +1740,7 @@ function DashboardView({
             question="What should I do during a break?"
           />
           <PomodoroFaqItem
-            answer="Pause if you expect to return, or reset if the session is over. Paused, reset, cancelled, or manually switched sessions never earn Focus XP or create History records."
+            answer="Pause if you expect to return, use Next session to skip without counting the interval, or reset the cycle when you want a completely fresh start. None of those actions earn Focus XP or create History records."
             question="What happens if my session is interrupted?"
           />
           <PomodoroFaqItem
@@ -2402,6 +2328,49 @@ function DeleteCompletedTasksConfirmation({ count, onCancel, onConfirm }) {
           </button>
           <button className="button button--danger" onClick={onConfirm} type="button">
             Delete completed
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ResetCycleConfirmation({ onCancel, onConfirm }) {
+  const cancelButtonRef = useRef(null);
+  const dialogRef = useModalDialog(onCancel, cancelButtonRef);
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onCancel}>
+      <section
+        aria-describedby="reset-cycle-description"
+        aria-labelledby="reset-cycle-title"
+        aria-modal="true"
+        className="modal modal--small"
+        onMouseDown={(event) => event.stopPropagation()}
+        ref={dialogRef}
+        role="alertdialog"
+        tabIndex="-1"
+      >
+        <div className="delete-symbol" aria-hidden="true">
+          !
+        </div>
+        <h2 id="reset-cycle-title">Reset this Focus cycle?</h2>
+        <p className="modal-copy" id="reset-cycle-description">
+          This cancels the current session and clears the completed intervals
+          in this cycle. Saved History, XP, achievements, and task progress will
+          remain.
+        </p>
+        <div className="modal-actions">
+          <button
+            className="button button--secondary"
+            onClick={onCancel}
+            ref={cancelButtonRef}
+            type="button"
+          >
+            Keep cycle
+          </button>
+          <button className="button button--danger" onClick={onConfirm} type="button">
+            Reset cycle
           </button>
         </div>
       </section>
@@ -3249,7 +3218,7 @@ function TimerView({
   onCompleteTask,
   onModeChange,
   onNavigate,
-  onOpenPopout,
+  onNextSession,
   onPause,
   onReset,
   onRestoreDefaults,
@@ -3268,6 +3237,7 @@ function TimerView({
   const selectableTasks = tasks.filter((task) => !task.isCompleted);
   const timerPanelRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSmallScreenDevice, setIsSmallScreenDevice] = useState(false);
   const [fullscreenMessage, setFullscreenMessage] = useState("");
   const fullscreenIsAvailable =
     typeof document !== "undefined" &&
@@ -3276,14 +3246,47 @@ function TimerView({
     typeof Element.prototype.requestFullscreen === "function";
 
   useEffect(() => {
+    const smallScreenQuery = window.matchMedia("(max-width: 1024px)");
+
+    function updateSmallScreenDevice() {
+      setIsSmallScreenDevice(
+        smallScreenQuery.matches &&
+          (navigator.maxTouchPoints > 0 ||
+            window.matchMedia("(pointer: coarse)").matches),
+      );
+    }
+
+    updateSmallScreenDevice();
+    smallScreenQuery.addEventListener("change", updateSmallScreenDevice);
+
+    return () =>
+      smallScreenQuery.removeEventListener("change", updateSmallScreenDevice);
+  }, []);
+
+  useEffect(() => {
     function handleFullscreenChange() {
       const timerIsFullscreen =
         document.fullscreenElement === timerPanelRef.current;
 
       setIsFullscreen(timerIsFullscreen);
+
+      if (
+        !timerIsFullscreen &&
+        isSmallScreenDevice &&
+        typeof screen.orientation?.unlock === "function"
+      ) {
+        try {
+          screen.orientation.unlock();
+        } catch {
+          // Exiting fullscreen remains safe when orientation unlock is rejected.
+        }
+      }
+
       setFullscreenMessage(
         timerIsFullscreen
-          ? "Timer entered full screen. Press Escape to exit."
+          ? isSmallScreenDevice
+            ? "Timer entered full screen. Keep your device in portrait orientation."
+            : "Timer entered full screen. Press Escape to exit."
           : "",
       );
     }
@@ -3291,7 +3294,7 @@ function TimerView({
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
+  }, [isSmallScreenDevice]);
 
   async function toggleTimerFullscreen() {
     const timerPanel = timerPanelRef.current;
@@ -3306,6 +3309,19 @@ function TimerView({
         await document.exitFullscreen();
       } else {
         await timerPanel.requestFullscreen();
+
+        if (
+          isSmallScreenDevice &&
+          typeof screen.orientation?.lock === "function"
+        ) {
+          try {
+            await screen.orientation.lock("portrait");
+          } catch {
+            setFullscreenMessage(
+              "Portrait lock is unavailable. Rotate your device upright to use the full-screen timer.",
+            );
+          }
+        }
       }
     } catch {
       setFullscreenMessage(
@@ -3332,9 +3348,29 @@ function TimerView({
       <section
         className="timer-panel"
         data-timer-mode={modeId}
+        data-portrait-fullscreen={isSmallScreenDevice ? "true" : "false"}
         aria-label={`${activeMode.label} timer`}
         ref={timerPanelRef}
       >
+        <div className="timer-rotate-message">
+          <span aria-hidden="true">↻</span>
+          <strong>Rotate your device</strong>
+          <p role="status">
+            The full-screen timer is designed for portrait orientation.
+          </p>
+          <button
+            aria-label="Exit full screen timer"
+            className="timer-fullscreen-button"
+            onClick={toggleTimerFullscreen}
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              className="fullscreen-icon fullscreen-icon--exit"
+            />
+            <span>Exit full screen</span>
+          </button>
+        </div>
         <div className="timer-modes" aria-label="Timer mode">
           {TIMER_MODES.map((mode) => (
             <button
@@ -3363,7 +3399,7 @@ function TimerView({
           focusCycleTarget={focusCycleTarget}
           onAddFocusInterval={onAddFocusInterval}
           onAddMinute={onAddMinute}
-          onOpenPopout={onOpenPopout}
+          onNextSession={onNextSession}
           onPause={onPause}
           onReset={onReset}
           onStart={onStart}
@@ -3551,13 +3587,14 @@ export default function App() {
   const [taskCompletionNotice, setTaskCompletionNotice] = useState(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
+  const [isResetCycleConfirmationOpen, setIsResetCycleConfirmationOpen] =
+    useState(false);
   const [recoveryNotice, setRecoveryNotice] = useState(
     initialState.recoveryMessage ?? "",
   );
   const [appStatusMessage, setAppStatusMessage] = useState(
     initialState.recoveryMessage ?? "",
   );
-  const [timerPopoutRoot, setTimerPopoutRoot] = useState(null);
   const timerEndTimeRef = useRef(null);
   const timerTotalSecondsRef = useRef(
     getTimerDurationSeconds(TIMER_MODES[0].id, timerSettings),
@@ -3571,7 +3608,6 @@ export default function App() {
   const sessionHistoryRef = useRef(initialState.sessionHistory);
   const rewardsRef = useRef(initialState.rewards);
   const audioContextRef = useRef(null);
-  const timerPopoutWindowRef = useRef(null);
   const primaryNavRef = useRef(null);
   const activeNavButtonRef = useRef(null);
 
@@ -3689,8 +3725,6 @@ export default function App() {
     () => () => {
       audioContextRef.current?.close();
       audioContextRef.current = null;
-      timerPopoutWindowRef.current?.close();
-      timerPopoutWindowRef.current = null;
     },
     [],
   );
@@ -3703,107 +3737,6 @@ export default function App() {
     const noticeTimeout = window.setTimeout(() => setRewardNotice(null), 8000);
     return () => window.clearTimeout(noticeTimeout);
   }, [rewardNotice, rewardNoticePaused]);
-
-  function closeTimerPopout() {
-    const popupWindow = timerPopoutWindowRef.current;
-
-    timerPopoutWindowRef.current = null;
-    setTimerPopoutRoot(null);
-
-    if (popupWindow && !popupWindow.closed) {
-      popupWindow.close();
-    }
-  }
-
-  async function openTimerPopout() {
-    const existingPopup = timerPopoutWindowRef.current;
-
-    if (existingPopup && !existingPopup.closed) {
-      existingPopup.focus();
-      setAppStatusMessage("The floating timer is already open.");
-      return;
-    }
-
-    let popupWindow;
-    let isPictureInPicture = false;
-
-    if ("documentPictureInPicture" in window) {
-      try {
-        popupWindow = await window.documentPictureInPicture.requestWindow({
-          height: 580,
-          width: 390,
-        });
-        isPictureInPicture = true;
-      } catch {
-        setAppStatusMessage(
-          "The floating timer was not opened. Try the Float control again.",
-        );
-        return;
-      }
-    } else {
-      popupWindow = window.open(
-        "",
-        "studyforge-timer-popout",
-        "popup=yes,width=410,height=620",
-      );
-    }
-
-    if (!popupWindow) {
-      setAppStatusMessage(
-        "The floating timer could not open. Allow popups for StudyForge and try again.",
-      );
-      return;
-    }
-
-    const popupDocument = popupWindow.document;
-
-    popupDocument.documentElement.lang = "en";
-    popupDocument.head.replaceChildren();
-    popupDocument.body.replaceChildren();
-    popupDocument.title = "StudyForge floating timer";
-
-    const viewportMeta = popupDocument.createElement("meta");
-    viewportMeta.name = "viewport";
-    viewportMeta.content = "width=device-width, initial-scale=1";
-    popupDocument.head.append(viewportMeta);
-
-    document
-      .querySelectorAll('link[rel="stylesheet"], style')
-      .forEach((stylesheet) => {
-        const clonedStylesheet = stylesheet.cloneNode(true);
-
-        if (stylesheet.tagName === "LINK") {
-          clonedStylesheet.href = stylesheet.href;
-        }
-
-        popupDocument.head.append(clonedStylesheet);
-      });
-
-    popupDocument.body.className = "timer-popout-body";
-    const popupRoot = popupDocument.createElement("div");
-    popupRoot.id = "timer-popout-root";
-    popupDocument.body.append(popupRoot);
-
-    popupWindow.addEventListener(
-      "pagehide",
-      () => {
-        if (timerPopoutWindowRef.current === popupWindow) {
-          timerPopoutWindowRef.current = null;
-          setTimerPopoutRoot(null);
-        }
-      },
-      { once: true },
-    );
-
-    timerPopoutWindowRef.current = popupWindow;
-    setTimerPopoutRoot(popupRoot);
-    popupWindow.focus();
-    setAppStatusMessage(
-      isPictureInPicture
-        ? "The timer is now floating above your other windows."
-        : "The timer opened in a compact window.",
-    );
-  }
 
   function openAddForm() {
     setEditingCourse(null);
@@ -4400,20 +4333,72 @@ export default function App() {
     setTimerStatus("paused");
   }
 
-  function resetTimer() {
+  function resetFocusCycle() {
     const resetDurationSeconds = getTimerDurationSeconds(
-      timerModeId,
+      "focus",
       timerSettings,
     );
 
     timerEndTimeRef.current = null;
     completionHandledRef.current = false;
     timerTaskOverrideRef.current = null;
+    focusCycleTargetRef.current = timerSettings.focusSessionsPerCycle;
     timerTotalSecondsRef.current = resetDurationSeconds;
+    setTimerModeId("focus");
+    setCompletedFocusSessions(0);
+    setFocusCycleTarget(timerSettings.focusSessionsPerCycle);
     setRemainingSeconds(resetDurationSeconds);
     setTimerTotalSeconds(resetDurationSeconds);
     setCompletionMessage("");
     setTimerStatus("idle");
+    setIsResetCycleConfirmationOpen(false);
+    setAppStatusMessage("A new Focus cycle is ready.");
+  }
+
+  function requestFocusCycleReset() {
+    const configuredModeSeconds = getTimerDurationSeconds(
+      timerModeId,
+      timerSettings,
+    );
+    const resetWouldDiscardProgress =
+      timerStatus !== "idle" ||
+      completedFocusSessions > 0 ||
+      focusCycleTarget !== timerSettings.focusSessionsPerCycle ||
+      timerTotalSeconds !== configuredModeSeconds ||
+      remainingSeconds !== configuredModeSeconds;
+
+    if (!resetWouldDiscardProgress) {
+      resetFocusCycle();
+      return;
+    }
+
+    if (timerStatus === "running") {
+      pauseTimer();
+    }
+
+    setIsResetCycleConfirmationOpen(true);
+  }
+
+  function moveToNextSession() {
+    const nextModeId = timerModeId === "focus" ? "short-break" : "focus";
+    const nextMode = getTimerMode(nextModeId);
+    const nextDurationSeconds = getTimerDurationSeconds(
+      nextModeId,
+      timerSettings,
+    );
+
+    timerEndTimeRef.current = null;
+    completionHandledRef.current = false;
+    timerTaskOverrideRef.current = null;
+    timerTotalSecondsRef.current = nextDurationSeconds;
+    setTimerModeId(nextModeId);
+    setRemainingSeconds(nextDurationSeconds);
+    setTimerTotalSeconds(nextDurationSeconds);
+    setCompletionMessage("");
+    setTimerStatus("idle");
+    setAppStatusMessage(
+      `${nextMode.label} is ready. The skipped session did not count toward rewards or cycle progress.`,
+    );
   }
 
   function changeTimerMode(nextModeId) {
@@ -4625,7 +4610,7 @@ export default function App() {
             onNavigate={navigateToView}
             onPauseTimer={pauseTimer}
             onQuickFocus={startDashboardQuickFocus}
-            onResetTimer={resetTimer}
+            onResetTimer={requestFocusCycleReset}
             onStartTimer={startTimer}
             onEditProfile={() => setIsProfileFormOpen(true)}
             profile={profile}
@@ -4695,9 +4680,9 @@ export default function App() {
             onCompleteTask={completeTask}
             onModeChange={changeTimerMode}
             onNavigate={navigateToView}
-            onOpenPopout={openTimerPopout}
+            onNextSession={moveToNextSession}
             onPause={pauseTimer}
-            onReset={resetTimer}
+            onReset={requestFocusCycleReset}
             onRestoreDefaults={restoreTimerDefaults}
             onSaveDurations={saveTimerDurations}
             onStart={startTimer}
@@ -4788,6 +4773,12 @@ export default function App() {
           onConfirm={deleteAllCompletedTasks}
         />
       )}
+      {isResetCycleConfirmationOpen && (
+        <ResetCycleConfirmation
+          onCancel={() => setIsResetCycleConfirmationOpen(false)}
+          onConfirm={resetFocusCycle}
+        />
+      )}
       {focusCompletionSummary && (
         <FocusCompletionSummary
           onClose={() => setFocusCompletionSummary(null)}
@@ -4795,22 +4786,6 @@ export default function App() {
           summary={focusCompletionSummary}
         />
       )}
-      {timerPopoutRoot &&
-        createPortal(
-          <TimerPopout
-            activeTask={activeTask}
-            modeId={timerModeId}
-            onClose={closeTimerPopout}
-            onModeChange={changeTimerMode}
-            onPause={pauseTimer}
-            onReset={resetTimer}
-            onStart={startTimer}
-            remainingSeconds={remainingSeconds}
-            status={timerStatus}
-            totalSeconds={timerTotalSeconds}
-          />,
-          timerPopoutRoot,
-        )}
     </div>
   );
 }
