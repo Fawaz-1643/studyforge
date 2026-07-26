@@ -26,7 +26,8 @@ milestones.
 - Choose how many completed Focus sessions lead to a Long Break
 - Automatically move from Focus to the correct Break and from a Break to Focus
 - Optionally start the next timer automatically
-- Show an in-app completion message and optionally play a short sound
+- Show an in-app completion message and optionally play distinct start/resume
+  and completion sounds
 - Save timer durations, cycle length, auto-start, and sound preferences in
   `localStorage`
 - A responsive dark design that works on phones and larger screens

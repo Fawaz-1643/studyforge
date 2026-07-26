@@ -50,7 +50,8 @@ next.
 - Configurable Focus sessions before a Long Break
 - Automatic Focus-to-Break and Break-to-Focus cycles
 - Optional auto-start for the next timer
-- In-app completion feedback and an optional one-second sound
+- In-app completion feedback, a layered bell chime, and a distinct start/resume
+  chime
 - Timer settings persistence with validation and safe defaults
 - Timer as the default landing view
 
@@ -63,7 +64,7 @@ Stored in `localStorage`:
 - Timer durations
 - Focus sessions per cycle
 - Auto-start preference
-- Completion-sound preference
+- Timer-sound preference
 
 Kept in memory and reset on reload:
 

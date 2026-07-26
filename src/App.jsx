@@ -750,8 +750,8 @@ function TimerSettings({
         </label>
         <label className="toggle-row">
           <span>
-            <strong>Completion sound</strong>
-            <small>Play a short sound when a timer reaches zero.</small>
+            <strong>Timer sounds</strong>
+            <small>Play distinct sounds when a timer starts and finishes.</small>
           </span>
           <input
             checked={settings.soundEnabled}
@@ -1011,7 +1011,7 @@ export default function App() {
     setCourseToDelete(null);
   }
 
-  function prepareCompletionSound(force = false) {
+  function prepareTimerSounds(force = false) {
     if ((!timerSettings.soundEnabled && !force) || audioContextRef.current) {
       return;
     }
@@ -1028,6 +1028,42 @@ export default function App() {
     });
   }
 
+  function createSoundBus(audioContext) {
+    const compressor = audioContext.createDynamicsCompressor();
+
+    compressor.threshold.setValueAtTime(-14, audioContext.currentTime);
+    compressor.knee.setValueAtTime(8, audioContext.currentTime);
+    compressor.ratio.setValueAtTime(4, audioContext.currentTime);
+    compressor.attack.setValueAtTime(0.003, audioContext.currentTime);
+    compressor.release.setValueAtTime(0.3, audioContext.currentTime);
+    compressor.connect(audioContext.destination);
+
+    return compressor;
+  }
+
+  function playTone({
+    audioContext,
+    destination,
+    duration,
+    frequency,
+    peakVolume,
+    startTime,
+    type = "sine",
+  }) {
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(peakVolume, startTime + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    oscillator.connect(gain);
+    gain.connect(destination);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration + 0.02);
+  }
+
   function playCompletionSound() {
     const audioContext = audioContextRef.current;
 
@@ -1036,22 +1072,58 @@ export default function App() {
     }
 
     try {
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
       const startTime = audioContext.currentTime;
+      const bellBus = createSoundBus(audioContext);
 
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(660, startTime);
-      oscillator.frequency.setValueAtTime(880, startTime + 0.09);
-      gain.gain.setValueAtTime(0.0001, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.24, startTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.98);
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start(startTime);
-      oscillator.stop(startTime + 1);
+      [
+        { frequency: 659.25, peakVolume: 0.38, duration: 2.2 },
+        { frequency: 1325.1, peakVolume: 0.18, duration: 1.75 },
+        { frequency: 1964.6, peakVolume: 0.1, duration: 1.35 },
+        { frequency: 2768.9, peakVolume: 0.06, duration: 0.9 },
+      ].forEach((partial) => {
+        playTone({
+          audioContext,
+          destination: bellBus,
+          startTime,
+          ...partial,
+        });
+      });
     } catch {
       // The visible completion message is the fallback when audio cannot play.
+    }
+  }
+
+  function playStartSound() {
+    const audioContext = audioContextRef.current;
+
+    if (!timerSettings.soundEnabled || !audioContext) {
+      return;
+    }
+
+    try {
+      const startTime = audioContext.currentTime;
+      const startBus = createSoundBus(audioContext);
+
+      playTone({
+        audioContext,
+        destination: startBus,
+        duration: 0.72,
+        frequency: 392,
+        peakVolume: 0.28,
+        startTime,
+        type: "triangle",
+      });
+      playTone({
+        audioContext,
+        destination: startBus,
+        duration: 0.88,
+        frequency: 587.33,
+        peakVolume: 0.32,
+        startTime: startTime + 0.2,
+        type: "triangle",
+      });
+    } catch {
+      // Starting the timer still works if audio cannot play.
     }
   }
 
@@ -1103,7 +1175,8 @@ export default function App() {
       return;
     }
 
-    prepareCompletionSound();
+    prepareTimerSounds();
+    playStartSound();
     completionHandledRef.current = false;
     timerEndTimeRef.current = Date.now() + remainingSeconds * 1000;
     setCompletionMessage("");
@@ -1184,7 +1257,7 @@ export default function App() {
 
   function toggleCompletionSound(isEnabled) {
     if (isEnabled) {
-      prepareCompletionSound(true);
+      prepareTimerSounds(true);
     }
 
     setTimerSettings((currentSettings) => ({
