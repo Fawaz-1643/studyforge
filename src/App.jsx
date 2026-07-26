@@ -322,9 +322,203 @@ function DeleteConfirmation({ course, onCancel, onConfirm }) {
   );
 }
 
+function DashboardView({ courses, profile, onNavigate }) {
+  const hasProfile = Boolean(profile.university || profile.fieldOfStudy);
+
+  return (
+    <section className="page-content" aria-labelledby="dashboard-title">
+      <div className="page-heading dashboard-heading">
+        <div>
+          <div className="eyebrow">
+            <span className="status-dot" />
+            Dashboard
+          </div>
+          <h1 id="dashboard-title">Your study space</h1>
+          <p className="page-copy">
+            Everything you’ve set up so far, kept simple and easy to reach.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-grid">
+        <article className="overview-card">
+          <div className="overview-card-heading">
+            <div className="overview-icon overview-icon--profile" aria-hidden="true">
+              <span />
+            </div>
+            <span className="overview-status">{hasProfile ? "Set up" : "Not set"}</span>
+          </div>
+          <p className="section-kicker">Student profile</p>
+          <h2>{profile.fieldOfStudy || "Add your field of study"}</h2>
+          <p className="overview-copy">
+            {profile.university ||
+              "Add an optional university and field to personalize your space."}
+          </p>
+          <button
+            className="text-link"
+            onClick={() => onNavigate("profile")}
+            type="button"
+          >
+            {hasProfile ? "View profile" : "Set up profile"}
+            <span aria-hidden="true">→</span>
+          </button>
+        </article>
+
+        <article className="overview-card">
+          <div className="overview-card-heading">
+            <div className="overview-icon overview-icon--courses" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <span className="overview-status">
+              {courses.length} {courses.length === 1 ? "course" : "courses"}
+            </span>
+          </div>
+          <p className="section-kicker">Course library</p>
+          <h2>{courses.length ? "Your subjects are ready" : "Build your course list"}</h2>
+          <div className="course-preview">
+            {courses.length ? (
+              courses.slice(0, 3).map((course) => (
+                <span key={course.id}>
+                  <i style={{ "--course-color": course.color }} />
+                  {course.name}
+                </span>
+              ))
+            ) : (
+              <p className="overview-copy">
+                Add each subject with a name and recognizable color.
+              </p>
+            )}
+          </div>
+          <button
+            className="text-link"
+            onClick={() => onNavigate("courses")}
+            type="button"
+          >
+            {courses.length ? "Manage courses" : "Add a course"}
+            <span aria-hidden="true">→</span>
+          </button>
+        </article>
+      </div>
+
+      <aside className="dashboard-note">
+        <span className="dashboard-note-mark" aria-hidden="true">
+          i
+        </span>
+        <div>
+          <strong>Your information stays on this device</strong>
+          <p>StudyForge saves your profile and courses in this browser.</p>
+        </div>
+      </aside>
+    </section>
+  );
+}
+
+function CoursesView({ courses, onAdd, onDelete, onEdit }) {
+  return (
+    <section
+      className="page-content courses-view"
+      aria-labelledby="courses-title"
+    >
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">
+            <span className="status-dot" />
+            Course library
+          </div>
+          <h1 id="courses-title">Your courses</h1>
+          <p className="page-copy">
+            Give every subject a home and a color you’ll recognize at a glance.
+          </p>
+        </div>
+        <button className="button button--primary add-button" onClick={onAdd}>
+          <PlusIcon />
+          Add course
+        </button>
+      </div>
+
+      <div className="course-summary" aria-live="polite">
+        <span>{courses.length}</span> {courses.length === 1 ? "course" : "courses"}
+        <span className="summary-divider" aria-hidden="true" />
+        Saved on this device
+      </div>
+
+      {courses.length === 0 ? (
+        <section className="empty-state">
+          <div className="empty-mark" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <h2>No courses yet</h2>
+          <p>Add the subjects you’re studying. You can rename or recolor them anytime.</p>
+          <button className="button button--primary" onClick={onAdd}>
+            <PlusIcon />
+            Add your first course
+          </button>
+        </section>
+      ) : (
+        <ul className="course-grid">
+          {courses.map((course) => (
+            <li
+              className="course-card"
+              key={course.id}
+              style={{ "--course-color": course.color }}
+            >
+              <div className="course-color" aria-hidden="true" />
+              <div className="course-content">
+                <p className="course-label">Course</p>
+                <h2>{course.name}</h2>
+              </div>
+              <div className="course-actions">
+                <button
+                  className="text-button"
+                  onClick={() => onEdit(course)}
+                  type="button"
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-button text-button--danger"
+                  onClick={() => onDelete(course)}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ProfileView({ profile, onSave }) {
+  return (
+    <section className="page-content profile-view" aria-labelledby="profile-page-title">
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">
+            <span className="status-dot" />
+            Student profile
+          </div>
+          <h1 id="profile-page-title">Your profile</h1>
+          <p className="page-copy">
+            Add a little context to make StudyForge feel like your own space.
+          </p>
+        </div>
+      </div>
+      <ProfilePanel profile={profile} onSave={onSave} />
+    </section>
+  );
+}
+
 export default function App() {
   const [courses, setCourses] = useState(loadCourses);
   const [profile, setProfile] = useState(loadProfile);
+  const [activeView, setActiveView] = useState("dashboard");
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -407,87 +601,53 @@ export default function App() {
       <div className="ambient-glow ambient-glow--bottom" />
 
       <header className="site-header">
-        <a className="brand" href="/" aria-label="StudyForge home">
+        <button
+          className="brand"
+          onClick={() => setActiveView("dashboard")}
+          type="button"
+        >
           <BrandMark />
           <span>StudyForge</span>
-        </a>
-        <span className="milestone-badge">Milestone 3</span>
+        </button>
+        <nav className="primary-nav" aria-label="Main navigation">
+          {[
+            { id: "dashboard", label: "Dashboard" },
+            { id: "courses", label: "Courses" },
+            { id: "profile", label: "Profile" },
+          ].map((item) => (
+            <button
+              aria-current={activeView === item.id ? "page" : undefined}
+              className="nav-button"
+              key={item.id}
+              onClick={() => setActiveView(item.id)}
+              type="button"
+            >
+              <span className={`nav-icon nav-icon--${item.id}`} aria-hidden="true" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <span className="milestone-badge">Milestones 1–3</span>
       </header>
 
-      <section className="courses-page" aria-labelledby="page-title">
-        <div className="page-heading">
-          <div>
-            <div className="eyebrow">
-              <span className="status-dot" />
-              Course library
-            </div>
-            <h1 id="page-title">Your courses</h1>
-            <p className="page-copy">
-              Give every subject a home and a color you’ll recognize at a glance.
-            </p>
-          </div>
-          <button className="button button--primary add-button" onClick={openAddForm}>
-            <PlusIcon />
-            Add course
-          </button>
-        </div>
-
-        <ProfilePanel profile={profile} onSave={setProfile} />
-
-        <div className="course-summary" aria-live="polite">
-          <span>{courses.length}</span> {courses.length === 1 ? "course" : "courses"}
-          <span className="summary-divider" aria-hidden="true" />
-          Saved on this device
-        </div>
-
-        {courses.length === 0 ? (
-          <section className="empty-state">
-            <div className="empty-mark" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-            <h2>No courses yet</h2>
-            <p>Add the subjects you’re studying. You can rename or recolor them anytime.</p>
-            <button className="button button--primary" onClick={openAddForm}>
-              <PlusIcon />
-              Add your first course
-            </button>
-          </section>
-        ) : (
-          <ul className="course-grid">
-            {courses.map((course) => (
-              <li
-                className="course-card"
-                key={course.id}
-                style={{ "--course-color": course.color }}
-              >
-                <div className="course-color" aria-hidden="true" />
-                <div className="course-content">
-                  <p className="course-label">Course</p>
-                  <h2>{course.name}</h2>
-                </div>
-                <div className="course-actions">
-                  <button
-                    className="text-button"
-                    onClick={() => editCourse(course)}
-                    type="button"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="text-button text-button--danger"
-                    onClick={() => setCourseToDelete(course)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {activeView === "dashboard" && (
+        <DashboardView
+          courses={courses}
+          onNavigate={setActiveView}
+          profile={profile}
+        />
+      )}
+      {activeView === "courses" && (
+        <CoursesView
+          courses={courses}
+          onAdd={openAddForm}
+          onDelete={setCourseToDelete}
+          onEdit={editCourse}
+        />
+      )}
+      {activeView === "profile" && (
+        <ProfileView profile={profile} onSave={setProfile} />
+      )}
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>

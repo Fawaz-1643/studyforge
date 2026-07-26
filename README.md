@@ -7,6 +7,8 @@ Tasks, the timer, statistics, and the XP system belong to later milestones.
 
 ## What Milestone 3 includes
 
+- Navigate between a dashboard, course library, and student profile
+- See a simple dashboard overview of saved profile and course information
 - Add an optional university and field of study to a student profile
 - Edit the profile and show saved details above the course library
 - Save the profile in the browser's `localStorage`
