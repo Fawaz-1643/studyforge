@@ -4709,7 +4709,7 @@ export default function App() {
       </main>
 
       <footer>
-        <span>Designed for calm, deliberate progress.</span>
+        <span>© 2026 Fawaz Ahmed.</span>
         <span>StudyForge v1.0.0</span>
       </footer>
 
