@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-Milestones 1-9 are complete. Milestone 10, restrained gamification, is next.
+Milestones 1-10 are complete. Milestone 11, quality and polish, is next.
 
 ## Technical foundation
 
@@ -135,6 +135,41 @@ Milestones 1-9 are complete. Milestone 10, restrained gamification, is next.
 - Existing dashboard landing, 2x2 overview, brand-home navigation, task rules,
   course deletion safeguards, and memory-only countdown behavior preserved
 
+### Milestone 10 - Restrained gamification
+
+- One XP per focused minute awarded for every validated naturally completed
+  Focus-session history record
+- One history record, at most one selected-task Pomodoro increment, and one
+  Focus XP award behind the same exactly-once natural-completion guard
+- Gradual level progression beginning at 100 XP and increasing the next-level
+  requirement by 25 XP at each level
+- A full-width dashboard progress section beneath the balanced 2x2 overview,
+  with total XP, current level, XP remaining, and a level-progress bar
+- A compact level and XP bar in the site navigation header, replacing the
+  milestone badge and adapting cleanly on narrow screens
+- A local-calendar study streak based only on valid completed Focus sessions,
+  with multiple sessions on the same date counting as one study day
+- Six one-time achievements for the first session, five sessions, and 3-day,
+  7-day, 14-day, and 30-day streaks
+- Brief, dismissible in-app feedback for XP, newly earned achievements, and
+  level progression
+- Manual task completion available from the Timer at any progress count, with a
+  prompt when a natural Focus completion lands exactly on the task estimate
+- One-time manual task-completion XP equal to five times the task's estimated
+  Pomodoros, protected from repeat awards after reopen and re-completion
+- A restrained task-completion message showing the bonus and offering confirmed
+  deletion
+- Confirmed bulk deletion of completed tasks from the Completed task filter,
+  while preserving History snapshots, statistics, and earned rewards
+- Migration of the complete Milestone 9 unified state into storage version 3,
+  deriving migrated Focus rewards from validated History records and treating
+  previously completed tasks as already handled without retroactive bonuses
+- Field-level reward repair for missing, malformed, outdated, duplicate, or
+  partially valid XP, task-reward, streak, and achievement data
+- Existing History statistics, page restoration, dashboard symmetry, brand-home
+  navigation, course safeguards, task estimates, and memory-only countdown
+  behavior preserved
+
 ## Current persistence
 
 Stored together in one versioned `localStorage` record:
@@ -148,6 +183,8 @@ Stored together in one versioned `localStorage` record:
 - Completed Focus sessions in the current timer cycle
 - Active-task selection
 - Dated completed Focus-session history
+- XP, level progress, local-date streak data, earned achievements, and one-time
+  task-completion reward records
 - Last open application page
 
 Kept in memory and reset on reload:
@@ -156,11 +193,14 @@ Kept in memory and reset on reload:
 - Active countdown target timestamp and remaining time
 - In-app timer completion feedback
 
-StudyForge migrates valid Milestone 8 unified records into storage version 2.
-When a usable unified record does not exist, it still migrates valid profile,
+StudyForge migrates valid Milestone 8 and Milestone 9 unified records into
+storage version 3. Valid Milestone 9 History records become the durable source
+for migrated Focus XP and streak progress. Previously completed tasks are
+marked as already handled without receiving retroactive task bonuses. When a
+usable unified record does not exist, StudyForge still migrates valid profile,
 course, and timer-setting values from the Milestones 1-7 storage keys. Loaded
-records and individual history entries are validated before use, and storage
-access failures fall back to in-memory operation.
+records, individual History entries, and reward data are validated before use,
+and storage-access failures fall back to in-memory operation.
 
 ## Important scope decisions
 
@@ -179,19 +219,25 @@ access failures fall back to in-memory operation.
   cannot be deleted.
 - Historical task and course labels are snapshots; later edits or deletion do
   not rewrite already completed sessions.
-- No XP, streaks, levels, achievements, coins, rewards, goals, recommendations,
-  heatmaps, or advanced analytics have been added.
+- Focus rewards use one XP per completed minute. Manual task completion uses a
+  one-time bonus of five XP per estimated Pomodoro; reopening a task cannot earn
+  that bonus again.
+- Levels and achievements are derived from validated progress so contradictory
+  saved reward values cannot create false unlocks.
+- No coins, currency, shops, purchasable rewards, avatars, fantasy artwork,
+  leaderboards, social comparison, sharing, goals, recommendations, heatmaps,
+  or advanced analytics have been added.
 
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after Milestone 9 on July 26, 2026
-- Build result: 32 modules transformed; production bundle completed successfully
-- Project version: 0.9.0
+- Latest verified status: passing after Milestone 10 on July 26, 2026
+- Build result: 33 modules transformed; production bundle completed successfully
+- Project version: 0.10.0
 
 ## Next milestone
 
-Milestone 10 will add restrained gamification: XP for valid completed Focus
-sessions, level progress, a simple streak, a few earned achievements, and brief
-reward feedback. It must not reward cancelled sessions or introduce coins,
-shops, avatars, or fantasy-style systems.
+Milestone 11 will focus on quality and polish: mobile layout, keyboard
+navigation, readable contrast, labels, confirmations, empty states, error
+messages, consistent spacing, and restrained motion. It must not add new product
+features except fixes needed for usability.

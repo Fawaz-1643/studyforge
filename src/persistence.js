@@ -1,8 +1,11 @@
+import { normalizeRewards } from "./rewardUtils.js";
+
 const APP_STORAGE_KEY = "studyforge:app-state";
 const LEGACY_COURSE_STORAGE_KEY = "studyforge:courses";
 const LEGACY_PROFILE_STORAGE_KEY = "studyforge:profile";
 const LEGACY_TIMER_SETTINGS_STORAGE_KEY = "studyforge:timer-settings";
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
+const MILESTONE_9_STORAGE_VERSION = 2;
 const MILESTONE_8_STORAGE_VERSION = 1;
 
 const PROFILE_FIELD_MAX_LENGTH = 80;
@@ -270,6 +273,7 @@ export function loadAppState(storage) {
   const currentState =
     isRecord(storedState) &&
     (storedState.version === STORAGE_VERSION ||
+      storedState.version === MILESTONE_9_STORAGE_VERSION ||
       storedState.version === MILESTONE_8_STORAGE_VERSION)
       ? storedState
       : {};
@@ -328,9 +332,17 @@ export function loadAppState(storage) {
     ? savedActiveTaskId
     : null;
   const sessionHistory =
-    currentState.version === STORAGE_VERSION
+    currentState.version === STORAGE_VERSION ||
+    currentState.version === MILESTONE_9_STORAGE_VERSION
       ? normalizeSessionHistory(currentState.sessionHistory)
       : [];
+  const rewards = normalizeRewards(
+    currentState.version === STORAGE_VERSION
+      ? currentState.rewards
+      : undefined,
+    sessionHistory,
+    tasks,
+  );
   const activeView = normalizeActiveView(currentState.activeView);
 
   return {
@@ -341,6 +353,7 @@ export function loadAppState(storage) {
     completedFocusSessions,
     activeTaskId,
     sessionHistory,
+    rewards,
     activeView,
   };
 }
@@ -364,6 +377,7 @@ export function saveAppState(state, storage) {
         completedFocusSessions: state.completedFocusSessions,
         activeTaskId: state.activeTaskId,
         sessionHistory: state.sessionHistory,
+        rewards: state.rewards,
         activeView: normalizeActiveView(state.activeView),
       }),
     );

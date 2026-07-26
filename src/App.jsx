@@ -21,6 +21,14 @@ import {
   createFocusSessionRecord,
   getSessionStatistics,
 } from "./statisticsUtils.js";
+import {
+  ACHIEVEMENTS,
+  awardFocusCompletion,
+  awardTaskCompletion,
+  getAchievementDetails,
+  getActiveStreakCount,
+  getLevelProgress,
+} from "./rewardUtils.js";
 
 const COURSE_COLORS = [
   { name: "Violet", value: "#9b87f5" },
@@ -78,6 +86,32 @@ function formatStudyMinutes(totalMinutes) {
   }
 
   return `${hours} ${hours === 1 ? "hr" : "hrs"} ${minutes} min`;
+}
+
+function MiniLevelProgress({ rewards }) {
+  const levelProgress = getLevelProgress(rewards.totalXp);
+
+  return (
+    <div
+      aria-label={`Level ${levelProgress.level}: ${levelProgress.xpIntoLevel} of ${levelProgress.xpForNextLevel} XP`}
+      className="mini-level-progress"
+    >
+      <div className="mini-level-copy">
+        <strong>Level {levelProgress.level}</strong>
+        <span>
+          {levelProgress.xpIntoLevel}/{levelProgress.xpForNextLevel} XP
+        </span>
+      </div>
+      <div
+        aria-hidden="true"
+        className="mini-level-track"
+      >
+        <span
+          style={{ "--mini-level-progress": `${levelProgress.progressPercent}%` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 function BrandMark() {
@@ -433,6 +467,7 @@ function DashboardView({
   courses,
   onNavigate,
   profile,
+  rewards,
   tasks,
   timerSettings,
 }) {
@@ -445,6 +480,11 @@ function DashboardView({
   const estimatedPomodoros = tasks.reduce(
     (total, task) => total + task.estimatedPomodoros,
     0,
+  );
+  const levelProgress = getLevelProgress(rewards.totalXp);
+  const currentStreak = getActiveStreakCount(rewards.streak);
+  const earnedAchievementIds = new Set(
+    rewards.achievements.map((achievement) => achievement.id),
   );
 
   return (
@@ -612,6 +652,79 @@ function DashboardView({
         </article>
       </div>
 
+      <section className="reward-progress" aria-labelledby="reward-progress-title">
+        <div className="reward-progress-heading">
+          <div>
+            <p className="section-kicker">Study progress</p>
+            <h2 id="reward-progress-title">
+              {rewards.totalXp
+                ? `Level ${levelProgress.level}`
+                : "Your progress starts with focused work"}
+            </h2>
+            <p>
+              {rewards.totalXp
+                ? `${rewards.totalXp} total XP · ${currentStreak} ${
+                    currentStreak === 1 ? "day" : "days"
+                  } in your current streak`
+                : "Complete a Focus session to earn one XP per focused minute."}
+            </p>
+          </div>
+          <div className="reward-level-badge" aria-label={`Level ${levelProgress.level}`}>
+            <span>Level</span>
+            <strong>{levelProgress.level}</strong>
+          </div>
+        </div>
+
+        <div className="reward-level-progress">
+          <div className="reward-level-labels">
+            <strong>
+              {levelProgress.xpIntoLevel} / {levelProgress.xpForNextLevel} XP
+            </strong>
+            <span>{levelProgress.xpRemaining} XP to next level</span>
+          </div>
+          <div
+            aria-label={`${Math.round(levelProgress.progressPercent)}% toward level ${
+              levelProgress.level + 1
+            }`}
+            aria-valuemax={levelProgress.xpForNextLevel}
+            aria-valuemin="0"
+            aria-valuenow={levelProgress.xpIntoLevel}
+            className="reward-progress-track"
+            role="progressbar"
+          >
+            <span
+              style={{ "--reward-progress": `${levelProgress.progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="achievement-grid" aria-label="Study achievements">
+          {ACHIEVEMENTS.map((achievement) => {
+            const isEarned = earnedAchievementIds.has(achievement.id);
+
+            return (
+              <article
+                className={`achievement-card${
+                  isEarned ? " achievement-card--earned" : ""
+                }`}
+                key={achievement.id}
+              >
+                <span className="achievement-mark" aria-hidden="true">
+                  {isEarned ? "✓" : "·"}
+                </span>
+                <div>
+                  <h3>{achievement.title}</h3>
+                  <p>{achievement.description}</p>
+                </div>
+                <span className="achievement-state">
+                  {isEarned ? "Earned" : "Not earned"}
+                </span>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
       <aside className="dashboard-note">
         <span className="dashboard-note-mark" aria-hidden="true">
           i
@@ -619,8 +732,8 @@ function DashboardView({
         <div>
           <strong>Your information stays on this device</strong>
           <p>
-            StudyForge saves your profile, courses, tasks, cycle progress, and
-            completed Focus history in this browser.
+            StudyForge saves your profile, courses, tasks, cycle progress,
+            completed Focus history, and earned rewards in this browser.
           </p>
         </div>
       </aside>
@@ -1080,6 +1193,133 @@ function TaskDeleteConfirmation({ onCancel, onConfirm, task }) {
   );
 }
 
+function DeleteCompletedTasksConfirmation({ count, onCancel, onConfirm }) {
+  return (
+    <div className="modal-backdrop" onMouseDown={onCancel}>
+      <section
+        aria-labelledby="completed-tasks-delete-title"
+        aria-modal="true"
+        className="modal modal--small"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="alertdialog"
+      >
+        <div className="delete-symbol" aria-hidden="true">
+          !
+        </div>
+        <h2 id="completed-tasks-delete-title">
+          Delete {count} completed {count === 1 ? "task" : "tasks"}?
+        </h2>
+        <p className="modal-copy">
+          This removes only completed tasks from the task list. Their saved
+          Focus history, statistics, and earned XP will remain.
+        </p>
+        <div className="modal-actions">
+          <button className="button button--secondary" onClick={onCancel} type="button">
+            Keep tasks
+          </button>
+          <button className="button button--danger" onClick={onConfirm} type="button">
+            Delete completed
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function EstimateReachedPrompt({ onComplete, onKeepWorking, task }) {
+  return (
+    <div className="modal-backdrop" onMouseDown={onKeepWorking}>
+      <section
+        aria-labelledby="estimate-reached-title"
+        aria-modal="true"
+        className="modal modal--small milestone-modal"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <div className="milestone-symbol" aria-hidden="true">
+          ✓
+        </div>
+        <h2 id="estimate-reached-title">You reached your estimate</h2>
+        <p className="modal-copy">
+          “{task.title}” now has {task.completedPomodoros} completed Pomodoros.
+          Would you like to mark it complete?
+        </p>
+        <div className="modal-actions">
+          <button
+            className="button button--secondary"
+            onClick={onKeepWorking}
+            type="button"
+          >
+            Keep working
+          </button>
+          <button className="button button--primary" onClick={onComplete} type="button">
+            Mark complete
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function RewardNotice({ notice, onClose }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <aside
+      aria-atomic="true"
+      aria-live="polite"
+      className="reward-notice"
+      role="status"
+    >
+      <div className="reward-notice-mark" aria-hidden="true">
+        {notice.levelUp ? "↑" : "★"}
+      </div>
+      <div>
+        <p>{notice.levelUp ? "Level up" : "Achievement earned"}</p>
+        <strong>{notice.title}</strong>
+        <span>{notice.message}</span>
+      </div>
+      <button aria-label="Dismiss reward message" onClick={onClose} type="button">
+        ×
+      </button>
+    </aside>
+  );
+}
+
+function TaskCompletionNotice({ notice, onClose, onDelete }) {
+  if (!notice) {
+    return null;
+  }
+
+  return (
+    <aside
+      aria-labelledby="task-completion-notice-title"
+      className="task-completion-notice"
+      role="dialog"
+    >
+      <div>
+        <p>Task complete</p>
+        <strong id="task-completion-notice-title">Nice work on “{notice.task.title}”.</strong>
+        <span>
+          {notice.bonusXp
+            ? `You earned ${notice.bonusXp} bonus XP.`
+            : "This task’s one-time XP bonus was already awarded."}
+        </span>
+      </div>
+      <div className="task-completion-notice-actions">
+        <button className="text-button" onClick={onClose} type="button">
+          Keep task
+        </button>
+        <button className="text-button text-button--danger" onClick={onDelete} type="button">
+          Delete task
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function CourseDeleteBlocked({ course, linkedTaskCount, onClose, onViewTasks }) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -1117,6 +1357,7 @@ function TasksView({
   courses,
   onAdd,
   onDelete,
+  onDeleteAllCompleted,
   onEdit,
   onNavigate,
   onSetActiveTask,
@@ -1239,21 +1480,32 @@ function TasksView({
                 </button>
               ))}
             </div>
-            <label className="course-filter">
-              <span className="sr-only">Filter by course</span>
-              <select
-                className="text-input select-input"
-                onChange={(event) => setCourseFilter(event.target.value)}
-                value={courseFilter}
-              >
-                <option value="all">All courses</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="task-filter-actions">
+              <label className="course-filter">
+                <span className="sr-only">Filter by course</span>
+                <select
+                  className="text-input select-input"
+                  onChange={(event) => setCourseFilter(event.target.value)}
+                  value={courseFilter}
+                >
+                  <option value="all">All courses</option>
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {statusFilter === "completed" && taskCounts.completed > 0 && (
+                <button
+                  className="button button--danger completed-task-cleanup"
+                  onClick={onDeleteAllCompleted}
+                  type="button"
+                >
+                  Delete all completed
+                </button>
+              )}
+            </div>
           </section>
 
           {filteredTasks.length === 0 ? (
@@ -1572,6 +1824,7 @@ function TimerView({
   completionMessage,
   courses,
   modeId,
+  onCompleteTask,
   onModeChange,
   onNavigate,
   onPause,
@@ -1617,13 +1870,22 @@ function TimerView({
             </h2>
           </div>
           {activeTask && (
-            <button
-              className="text-button"
-              onClick={() => onSetActiveTask(null)}
-              type="button"
-            >
-              Clear
-            </button>
+            <div className="active-task-actions">
+              <button
+                className="text-button"
+                onClick={() => onSetActiveTask(null)}
+                type="button"
+              >
+                Clear
+              </button>
+              <button
+                className="button button--secondary"
+                onClick={() => onCompleteTask(activeTask.id)}
+                type="button"
+              >
+                Mark task complete
+              </button>
+            </div>
           )}
         </div>
 
@@ -1765,6 +2027,7 @@ export default function App() {
   const [sessionHistory, setSessionHistory] = useState(
     initialState.sessionHistory,
   );
+  const [rewards, setRewards] = useState(initialState.rewards);
   const [activeView, setActiveView] = useState(initialState.activeView);
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
   const [timerSettings, setTimerSettings] = useState(
@@ -1784,16 +2047,24 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [deleteCompletedCount, setDeleteCompletedCount] = useState(0);
+  const [estimateReachedTask, setEstimateReachedTask] = useState(null);
+  const [rewardNotice, setRewardNotice] = useState(null);
+  const [taskCompletionNotice, setTaskCompletionNotice] = useState(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const timerEndTimeRef = useRef(null);
   const completionHandledRef = useRef(false);
   const activeTaskIdRef = useRef(initialState.activeTaskId);
   const coursesRef = useRef(initialState.courses);
   const tasksRef = useRef(initialState.tasks);
+  const sessionHistoryRef = useRef(initialState.sessionHistory);
+  const rewardsRef = useRef(initialState.rewards);
   const audioContextRef = useRef(null);
 
   coursesRef.current = courses;
   tasksRef.current = tasks;
+  sessionHistoryRef.current = sessionHistory;
+  rewardsRef.current = rewards;
 
   useEffect(() => {
     saveAppState({
@@ -1804,6 +2075,7 @@ export default function App() {
       completedFocusSessions,
       activeTaskId,
       sessionHistory,
+      rewards,
       activeView,
     });
   }, [
@@ -1812,6 +2084,7 @@ export default function App() {
     completedFocusSessions,
     courses,
     profile,
+    rewards,
     sessionHistory,
     tasks,
     timerSettings,
@@ -1835,7 +2108,9 @@ export default function App() {
       !courseToDelete &&
       !courseDeleteBlocked &&
       !isTaskFormOpen &&
-      !taskToDelete
+      !taskToDelete &&
+      !deleteCompletedCount &&
+      !estimateReachedTask
     ) {
       return undefined;
     }
@@ -1849,6 +2124,8 @@ export default function App() {
         setIsTaskFormOpen(false);
         setEditingTask(null);
         setTaskToDelete(null);
+        setDeleteCompletedCount(0);
+        setEstimateReachedTask(null);
       }
     }
 
@@ -1857,6 +2134,8 @@ export default function App() {
   }, [
     courseDeleteBlocked,
     courseToDelete,
+    deleteCompletedCount,
+    estimateReachedTask,
     isFormOpen,
     isTaskFormOpen,
     taskToDelete,
@@ -1899,6 +2178,15 @@ export default function App() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (!rewardNotice) {
+      return undefined;
+    }
+
+    const noticeTimeout = window.setTimeout(() => setRewardNotice(null), 6500);
+    return () => window.clearTimeout(noticeTimeout);
+  }, [rewardNotice]);
 
   function openAddForm() {
     setEditingCourse(null);
@@ -2012,27 +2300,104 @@ export default function App() {
     setActiveTaskId(nextTaskId);
   }
 
-  function toggleTaskComplete(taskId) {
-    const task = tasks.find((candidate) => candidate.id === taskId);
+  function completeTask(taskId) {
+    const task = tasksRef.current.find(
+      (candidate) => candidate.id === taskId && !candidate.isCompleted,
+    );
 
     if (!task) {
       return;
     }
 
-    if (!task.isCompleted && activeTaskIdRef.current === taskId) {
+    const awardedAt = Date.now();
+    const rewardResult = awardTaskCompletion(
+      rewardsRef.current,
+      task,
+      awardedAt,
+    );
+    const nextTasks = toggleTaskInList(tasksRef.current, taskId);
+
+    rewardsRef.current = rewardResult.rewards;
+    tasksRef.current = nextTasks;
+    setRewards(rewardResult.rewards);
+    setTasks(nextTasks);
+
+    if (activeTaskIdRef.current === taskId) {
       selectActiveTask(null);
     }
 
-    setTasks((currentTasks) => toggleTaskInList(currentTasks, taskId));
+    setEstimateReachedTask(null);
+    setTaskCompletionNotice({
+      bonusXp: rewardResult.bonusXp,
+      task: { ...task, isCompleted: true },
+    });
+
+    if (rewardResult.nextLevel > rewardResult.previousLevel) {
+      setRewardNotice({
+        levelUp: true,
+        message: `Your task bonus moved you to Level ${rewardResult.nextLevel}.`,
+        title: `Level ${rewardResult.nextLevel}`,
+      });
+    }
+  }
+
+  function toggleTaskComplete(taskId) {
+    const task = tasksRef.current.find((candidate) => candidate.id === taskId);
+
+    if (!task) {
+      return;
+    }
+
+    if (!task.isCompleted) {
+      completeTask(taskId);
+      return;
+    }
+
+    const nextTasks = toggleTaskInList(tasksRef.current, taskId);
+    tasksRef.current = nextTasks;
+    setTasks(nextTasks);
+
+    if (taskCompletionNotice?.task.id === taskId) {
+      setTaskCompletionNotice(null);
+    }
   }
 
   function deleteTask() {
+    if (!taskToDelete) {
+      return;
+    }
+
     if (activeTaskIdRef.current === taskToDelete.id) {
       selectActiveTask(null);
     }
 
-    setTasks((currentTasks) => deleteTaskFromList(currentTasks, taskToDelete.id));
+    const nextTasks = deleteTaskFromList(tasksRef.current, taskToDelete.id);
+    tasksRef.current = nextTasks;
+    setTasks(nextTasks);
+
+    if (taskCompletionNotice?.task.id === taskToDelete.id) {
+      setTaskCompletionNotice(null);
+    }
+
     setTaskToDelete(null);
+  }
+
+  function prepareCompletedTaskDeletion() {
+    if (!taskCompletionNotice) {
+      return;
+    }
+
+    setTaskToDelete(taskCompletionNotice.task);
+    setTaskCompletionNotice(null);
+  }
+
+  function deleteAllCompletedTasks() {
+    const nextTasks = tasksRef.current.filter((task) => !task.isCompleted);
+
+    tasksRef.current = nextTasks;
+    setTasks(nextTasks);
+    setDeleteCompletedCount(0);
+    setTaskCompletionNotice(null);
   }
 
   function viewBlockedCourseTasks() {
@@ -2178,22 +2543,68 @@ export default function App() {
           (course) => course.id === selectedTask?.courseId,
         ) ?? null;
 
-      if (selectedTaskId) {
-        setTasks((currentTasks) =>
-          incrementTaskPomodoroInList(currentTasks, selectedTaskId),
+      if (selectedTask) {
+        const nextTasks = incrementTaskPomodoroInList(
+          tasksRef.current,
+          selectedTask.id,
         );
+        const updatedTask = nextTasks.find(
+          (task) => task.id === selectedTask.id,
+        );
+
+        tasksRef.current = nextTasks;
+        setTasks(nextTasks);
+
+        if (
+          updatedTask &&
+          updatedTask.completedPomodoros === updatedTask.estimatedPomodoros
+        ) {
+          setEstimateReachedTask(updatedTask);
+        }
       }
 
-      setSessionHistory((currentHistory) => [
-        ...currentHistory,
-        createFocusSessionRecord({
-          completedAt,
-          course: selectedCourse,
-          createId: createSessionId,
-          durationMinutes: timerSettings.focusMinutes,
-          task: selectedTask,
-        }),
-      ]);
+      const completedSession = createFocusSessionRecord({
+        completedAt,
+        course: selectedCourse,
+        createId: createSessionId,
+        durationMinutes: timerSettings.focusMinutes,
+        task: selectedTask,
+      });
+      const nextHistory = [...sessionHistoryRef.current, completedSession];
+      const rewardResult = awardFocusCompletion(
+        rewardsRef.current,
+        nextHistory,
+        completedAt,
+      );
+
+      sessionHistoryRef.current = nextHistory;
+      rewardsRef.current = rewardResult.rewards;
+      setSessionHistory(nextHistory);
+      setRewards(rewardResult.rewards);
+
+      if (
+        rewardResult.nextLevel > rewardResult.previousLevel ||
+        rewardResult.newAchievements.length > 0
+      ) {
+        const achievementNames = rewardResult.newAchievements
+          .map((achievement) => getAchievementDetails(achievement.id)?.title)
+          .filter(Boolean);
+        const levelUp = rewardResult.nextLevel > rewardResult.previousLevel;
+
+        setRewardNotice({
+          levelUp,
+          message: levelUp
+            ? achievementNames.length
+              ? `You also earned ${achievementNames.join(", ")}.`
+              : `${rewardResult.rewards.totalXp} total XP earned so far.`
+            : achievementNames.join(", "),
+          title: levelUp
+            ? `Level ${rewardResult.nextLevel}`
+            : achievementNames.length === 1
+              ? achievementNames[0]
+              : `${achievementNames.length} achievements`,
+        });
+      }
 
       const nextFocusCount = completedFocusSessions + 1;
       const cycleIsComplete =
@@ -2213,7 +2624,11 @@ export default function App() {
       : `${nextMode.label} is ready.`;
 
     playCompletionSound();
-    setCompletionMessage(`${completedMode.label} complete. ${nextAction}`);
+    setCompletionMessage(
+      timerModeId === "focus"
+        ? `${completedMode.label} complete. +${timerSettings.focusMinutes} XP. ${nextAction}`
+        : `${completedMode.label} complete. ${nextAction}`,
+    );
     setTimerModeId(nextModeId);
     setRemainingSeconds(nextDurationSeconds);
 
@@ -2364,7 +2779,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–9</span>
+        <MiniLevelProgress rewards={rewards} />
       </header>
 
       {activeView === "dashboard" && (
@@ -2375,6 +2790,7 @@ export default function App() {
           courses={courses}
           onNavigate={setActiveView}
           profile={profile}
+          rewards={rewards}
           tasks={tasks}
           timerSettings={timerSettings}
         />
@@ -2393,6 +2809,11 @@ export default function App() {
           courses={courses}
           onAdd={openAddTaskForm}
           onDelete={setTaskToDelete}
+          onDeleteAllCompleted={() =>
+            setDeleteCompletedCount(
+              tasks.filter((task) => task.isCompleted).length,
+            )
+          }
           onEdit={editTask}
           onNavigate={setActiveView}
           onSetActiveTask={selectActiveTask}
@@ -2415,6 +2836,7 @@ export default function App() {
           completionMessage={completionMessage}
           courses={courses}
           modeId={timerModeId}
+          onCompleteTask={completeTask}
           onModeChange={changeTimerMode}
           onNavigate={setActiveView}
           onPause={pauseTimer}
@@ -2434,8 +2856,15 @@ export default function App() {
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.9</span>
+        <span>StudyForge v0.10</span>
       </footer>
+
+      <RewardNotice notice={rewardNotice} onClose={() => setRewardNotice(null)} />
+      <TaskCompletionNotice
+        notice={taskCompletionNotice}
+        onClose={() => setTaskCompletionNotice(null)}
+        onDelete={prepareCompletedTaskDeletion}
+      />
 
       {isFormOpen && (
         <CourseForm course={editingCourse} onCancel={closeForm} onSave={saveCourse} />
@@ -2468,6 +2897,20 @@ export default function App() {
           onCancel={() => setTaskToDelete(null)}
           onConfirm={deleteTask}
           task={taskToDelete}
+        />
+      )}
+      {deleteCompletedCount > 0 && (
+        <DeleteCompletedTasksConfirmation
+          count={deleteCompletedCount}
+          onCancel={() => setDeleteCompletedCount(0)}
+          onConfirm={deleteAllCompletedTasks}
+        />
+      )}
+      {estimateReachedTask && (
+        <EstimateReachedPrompt
+          onComplete={() => completeTask(estimateReachedTask.id)}
+          onKeepWorking={() => setEstimateReachedTask(null)}
+          task={estimateReachedTask}
         />
       )}
     </main>

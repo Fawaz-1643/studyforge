@@ -1,13 +1,10 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 9: session history and
-statistics**.
+a time. This repository currently contains **Milestone 10: restrained
+gamification**.
 
-XP, levels, streaks, achievements, and other rewards belong to later
-milestones.
-
-## What Milestones 1–9 include
+## What Milestones 1–10 include
 
 - Navigate between a dashboard, course library, task manager, timer, study
   history, and student profile
@@ -73,12 +70,35 @@ milestones.
   list
 - See clear history and statistics empty states before any Focus session has
   completed
+- Earn one XP for each minute in a naturally completed Focus session
+- Progress through levels whose XP requirements increase gradually by 25 XP
+  per level
+- See current-level XP, XP remaining, and a full-width progress bar beneath the
+  balanced dashboard overview
+- See a compact level and XP bar in the site navigation header
+- Build a study streak from valid Focus sessions on consecutive local calendar
+  dates
+- Earn first-session, five-session, 3-day, 7-day, 14-day, and 30-day
+  achievements only once
+- See brief in-app feedback for XP, achievements, and level progression
+- Manually complete the current task from the Timer without changing its
+  estimate or completing it automatically
+- Receive a one-time task bonus equal to five XP per estimated Pomodoro
+- Choose whether to complete a task when a Focus session reaches its estimate
+- Keep or delete a task from its completion message
+- Delete all completed tasks from the Completed task filter after confirming
+  the exact number being removed
+- Restore XP, level progress, streak data, achievements, and one-time task
+  rewards safely after reload
+- Migrate the complete Milestone 9 state into the Milestone 10 storage version
+  and repair malformed or partially valid reward data
 - A responsive dark design that works on phones and larger screens
 
 The profile, courses, tasks, task progress, timer settings, completed Focus
-sessions in the current cycle, current-task selection, and completed Focus
-history are stored only on the device and browser where they were created.
-Clearing that browser's site data will also clear them.
+sessions in the current cycle, current-task selection, completed Focus history,
+XP, streak, achievements, and task-reward records are stored only on the device
+and browser where they were created. Clearing that browser's site data will also
+clear them.
 
 The last open page is saved too. New visitors and invalid saved page values open
 Dashboard, and the StudyForge logo returns there as the application home.
@@ -87,17 +107,22 @@ The active or paused countdown remains deliberately memory-only. Reloading does
 not reconstruct its mode, status, target timestamp, or remaining seconds; the
 timer returns to a fresh Focus session while retaining valid cycle progress.
 
-StudyForge automatically migrates a valid Milestone 8 unified record and still
-imports valid profile, course, and timer-setting data from the Milestones 1–7
-storage keys when no usable unified state exists. Unavailable, malformed,
-outdated, or partially invalid browser data falls back safely, and
-browser-storage failures do not prevent in-memory use.
+StudyForge automatically migrates valid Milestone 8 and Milestone 9 unified
+records and still imports valid profile, course, and timer-setting data from the
+Milestones 1–7 storage keys when no usable unified state exists. Valid
+Milestone 9 History records become the source of migrated Focus XP and streak
+progress. Previously completed tasks are treated as already handled without
+receiving retroactive task bonuses. Unavailable, malformed, outdated, or
+partially invalid browser data falls back safely, and browser-storage failures
+do not prevent in-memory use.
 
 Task estimates remain planning values. A naturally completed Focus session
 increments the selected task's completed-Pomodoro count and creates one history
 record without changing its estimate or automatically completing the task.
 Break completions, resets, pauses, settings changes, manual mode switches, and
-cancellations do not themselves increment task progress or create history.
+cancellations do not themselves increment task progress, create history, or
+award rewards. Task completion is always a deliberate user action. Its XP bonus
+can be earned only once for a given task, even if that task is reopened.
 
 ## Run the project locally
 
@@ -138,6 +163,7 @@ studyforge/
 │   ├── App.jsx       # The visible React screen
 │   ├── main.jsx      # Connects React to the web page
 │   ├── persistence.js # Unified storage, validation, and legacy migration
+│   ├── rewardUtils.js # XP, levels, streaks, achievements, and reward repair
 │   ├── statisticsUtils.js # Session creation and study-statistic calculations
 │   ├── taskUtils.js  # Task validation, filtering, and list rules
 │   └── styles.css    # The complete visual theme
