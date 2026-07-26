@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-const STORAGE_KEY = "studyforge:courses";
+const COURSE_STORAGE_KEY = "studyforge:courses";
+const PROFILE_STORAGE_KEY = "studyforge:profile";
 const COURSE_COLORS = [
   { name: "Violet", value: "#9b87f5" },
   { name: "Blue", value: "#5b9cf6" },
@@ -13,7 +14,7 @@ const COURSE_COLORS = [
 
 function loadCourses() {
   try {
-    const savedCourses = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const savedCourses = JSON.parse(localStorage.getItem(COURSE_STORAGE_KEY));
 
     if (!Array.isArray(savedCourses)) {
       return [];
@@ -27,6 +28,21 @@ function loadCourses() {
     );
   } catch {
     return [];
+  }
+}
+
+function loadProfile() {
+  try {
+    const savedProfile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY));
+
+    return {
+      university:
+        typeof savedProfile?.university === "string" ? savedProfile.university : "",
+      fieldOfStudy:
+        typeof savedProfile?.fieldOfStudy === "string" ? savedProfile.fieldOfStudy : "",
+    };
+  } catch {
+    return { university: "", fieldOfStudy: "" };
   }
 }
 
@@ -46,6 +62,133 @@ function BrandMark() {
 
 function PlusIcon() {
   return <span className="plus-icon" aria-hidden="true" />;
+}
+
+function ProfilePanel({ profile, onSave }) {
+  const hasProfile = Boolean(profile.university || profile.fieldOfStudy);
+  const [isEditing, setIsEditing] = useState(!hasProfile);
+  const [university, setUniversity] = useState(profile.university);
+  const [fieldOfStudy, setFieldOfStudy] = useState(profile.fieldOfStudy);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    const nextProfile = {
+      university: university.trim(),
+      fieldOfStudy: fieldOfStudy.trim(),
+    };
+
+    onSave(nextProfile);
+
+    if (nextProfile.university || nextProfile.fieldOfStudy) {
+      setIsEditing(false);
+    }
+  }
+
+  function cancelEditing() {
+    setUniversity(profile.university);
+    setFieldOfStudy(profile.fieldOfStudy);
+    setIsEditing(false);
+  }
+
+  if (!isEditing && hasProfile) {
+    return (
+      <section className="profile-panel profile-panel--saved" aria-labelledby="profile-title">
+        <div className="profile-avatar" aria-hidden="true">
+          <span />
+        </div>
+        <div className="profile-details">
+          <p className="section-kicker">Student profile</p>
+          <h2 id="profile-title">Your study space</h2>
+          <dl>
+            {profile.fieldOfStudy && (
+              <div>
+                <dt>Field of study</dt>
+                <dd>{profile.fieldOfStudy}</dd>
+              </div>
+            )}
+            {profile.university && (
+              <div>
+                <dt>University</dt>
+                <dd>{profile.university}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+        <button
+          className="button button--secondary profile-edit-button"
+          onClick={() => setIsEditing(true)}
+          type="button"
+        >
+          Edit profile
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="profile-panel" aria-labelledby="profile-title">
+      <div className="profile-intro">
+        <div>
+          <p className="section-kicker">Make it yours</p>
+          <h2 id="profile-title">Set up your study space</h2>
+        </div>
+        <p>
+          Add a little context to StudyForge. Both details are optional and stay on
+          this device.
+        </p>
+      </div>
+
+      <form className="profile-form" onSubmit={handleSubmit}>
+        <div className="profile-fields">
+          <label>
+            <span className="field-label">
+              University <span className="optional-label">Optional</span>
+            </span>
+            <input
+              autoComplete="organization"
+              className="text-input"
+              maxLength={80}
+              onChange={(event) => setUniversity(event.target.value)}
+              placeholder="e.g. University of Dubai"
+              value={university}
+            />
+          </label>
+          <label>
+            <span className="field-label">
+              Field of study <span className="optional-label">Optional</span>
+            </span>
+            <input
+              autoComplete="off"
+              className="text-input"
+              maxLength={80}
+              onChange={(event) => setFieldOfStudy(event.target.value)}
+              placeholder="e.g. Computer Science"
+              value={fieldOfStudy}
+            />
+          </label>
+        </div>
+        <div className="profile-form-actions">
+          {hasProfile && (
+            <button
+              className="button button--secondary"
+              onClick={cancelEditing}
+              type="button"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            className="button button--primary"
+            disabled={!university.trim() && !fieldOfStudy.trim()}
+            type="submit"
+          >
+            Save profile
+          </button>
+        </div>
+      </form>
+    </section>
+  );
 }
 
 function CourseForm({ course, onCancel, onSave }) {
@@ -101,6 +244,7 @@ function CourseForm({ course, onCancel, onSave }) {
           </label>
           <input
             autoComplete="off"
+            className="text-input"
             id="course-name"
             maxLength={60}
             onChange={(event) => setName(event.target.value)}
@@ -180,17 +324,26 @@ function DeleteConfirmation({ course, onCancel, onConfirm }) {
 
 export default function App() {
   const [courses, setCourses] = useState(loadCourses);
+  const [profile, setProfile] = useState(loadProfile);
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+      localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(courses));
     } catch {
       // Keep the course manager usable if browser storage is unavailable.
     }
   }, [courses]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    } catch {
+      // Keep the profile form usable if browser storage is unavailable.
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!isFormOpen && !courseToDelete) {
@@ -258,7 +411,7 @@ export default function App() {
           <BrandMark />
           <span>StudyForge</span>
         </a>
-        <span className="milestone-badge">Milestone 2</span>
+        <span className="milestone-badge">Milestone 3</span>
       </header>
 
       <section className="courses-page" aria-labelledby="page-title">
@@ -278,6 +431,8 @@ export default function App() {
             Add course
           </button>
         </div>
+
+        <ProfilePanel profile={profile} onSave={setProfile} />
 
         <div className="course-summary" aria-live="polite">
           <span>{courses.length}</span> {courses.length === 1 ? "course" : "courses"}
@@ -336,7 +491,7 @@ export default function App() {
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.2</span>
+        <span>StudyForge v0.3</span>
       </footer>
 
       {isFormOpen && (

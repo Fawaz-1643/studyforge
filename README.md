@@ -1,20 +1,23 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 2: course management**.
+a time. This repository currently contains **Milestone 3: student profile**.
 
 Tasks, the timer, statistics, and the XP system belong to later milestones.
 
-## What Milestone 2 includes
+## What Milestone 3 includes
 
+- Add an optional university and field of study to a student profile
+- Edit the profile and show saved details above the course library
+- Save the profile in the browser's `localStorage`
 - Add courses with a name and one of seven colors
 - Edit an existing course's name or color
 - Delete a course after a confirmation step
 - Save the course list in the browser's `localStorage`
 - A responsive dark design that works on phones and larger screens
 
-Courses are stored only on the device and browser where they were created.
-Clearing that browser's site data will also clear the courses.
+The profile and courses are stored only on the device and browser where they
+were created. Clearing that browser's site data will also clear them.
 
 ## Run the project locally
 
