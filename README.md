@@ -1,13 +1,13 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 6: a course-linked task
-manager**.
+a time. This repository currently contains **Milestone 7: an active-task
+session workflow**.
 
-Task-and-timer connections, statistics, unified persistence, and the XP system
-belong to later milestones.
+Unified persistence, session history, statistics, and the XP system belong to
+later milestones.
 
-## What Milestones 1–6 include
+## What Milestones 1–7 include
 
 - Navigate between a dashboard, course library, task manager, timer, and student
   profile
@@ -41,6 +41,14 @@ belong to later milestones.
 - Prevent deletion of a course while any active or completed task still links
   to it
 - See clear empty states when courses, tasks, or filter matches are missing
+- Select, change, or clear one current study task
+- See the current task, its course color, and completed-versus-estimated
+  Pomodoros beside the timer
+- Increment the current task exactly once when a Focus session naturally
+  finishes
+- Keep breaks and manual timer actions from changing task progress
+- Clear the current-task selection when that task is completed or deleted
+- See active-task and overall task progress on the dashboard
 - A responsive dark design that works on phones and larger screens
 
 The profile, courses, and timer settings are stored only on the device and
@@ -48,12 +56,15 @@ browser where they were created. Clearing that browser's site data will also
 clear them. The active timer and completed Focus count in the current cycle are
 kept only in memory and reset when the page is reloaded.
 
-Tasks are also deliberately kept in memory only during Milestone 6. Reloading
-the page clears the task list. Task persistence will be added as part of the
-unified local persistence work in Milestone 8.
+Tasks, completed task Pomodoros, and the current-task selection are deliberately
+kept in memory only during Milestone 7. Reloading the page clears all of them.
+Their persistence will be added as part of the unified local persistence work
+in Milestone 8.
 
-Task estimates are planning values. Timer completions do not change them, and
-tasks are not connected to timer sessions until Milestone 7.
+Task estimates remain planning values. A naturally completed Focus session
+increments the selected task's completed-Pomodoro count without changing its
+estimate or automatically completing the task. Breaks, resets, pauses, settings
+changes, and manual mode switches do not increment task progress.
 
 ## Run the project locally
 

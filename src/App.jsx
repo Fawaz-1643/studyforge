@@ -4,6 +4,7 @@ import {
   deleteTaskFromList,
   filterTasks,
   getTaskCounts,
+  incrementTaskPomodoroInList,
   saveTaskInList,
   TASK_ESTIMATE_MAX,
   TASK_ESTIMATE_MIN,
@@ -415,8 +416,26 @@ function DeleteConfirmation({ course, onCancel, onConfirm }) {
   );
 }
 
-function DashboardView({ courses, profile, onNavigate }) {
+function DashboardView({
+  activeTask,
+  activeTaskCourse,
+  completedFocusSessions,
+  courses,
+  onNavigate,
+  profile,
+  tasks,
+  timerSettings,
+}) {
   const hasProfile = Boolean(profile.university || profile.fieldOfStudy);
+  const taskCounts = getTaskCounts(tasks);
+  const completedPomodoros = tasks.reduce(
+    (total, task) => total + (task.completedPomodoros ?? 0),
+    0,
+  );
+  const estimatedPomodoros = tasks.reduce(
+    (total, task) => total + task.estimatedPomodoros,
+    0,
+  );
 
   return (
     <section className="page-content" aria-labelledby="dashboard-title">
@@ -441,12 +460,14 @@ function DashboardView({ courses, profile, onNavigate }) {
             </div>
             <span className="overview-status">{hasProfile ? "Set up" : "Not set"}</span>
           </div>
-          <p className="section-kicker">Student profile</p>
-          <h2>{profile.fieldOfStudy || "Add your field of study"}</h2>
-          <p className="overview-copy">
-            {profile.university ||
-              "Add an optional university and field to personalize your space."}
-          </p>
+          <div className="overview-card-body">
+            <p className="section-kicker">Student profile</p>
+            <h2>{profile.fieldOfStudy || "Add your field of study"}</h2>
+            <p className="overview-copy">
+              {profile.university ||
+                "Add an optional university and field to personalize your space."}
+            </p>
+          </div>
           <button
             className="text-link"
             onClick={() => onNavigate("profile")}
@@ -468,21 +489,25 @@ function DashboardView({ courses, profile, onNavigate }) {
               {courses.length} {courses.length === 1 ? "course" : "courses"}
             </span>
           </div>
-          <p className="section-kicker">Course library</p>
-          <h2>{courses.length ? "Your subjects are ready" : "Build your course list"}</h2>
-          <div className="course-preview">
-            {courses.length ? (
-              courses.slice(0, 3).map((course) => (
-                <span key={course.id}>
-                  <i style={{ "--course-color": course.color }} />
-                  {course.name}
-                </span>
-              ))
-            ) : (
-              <p className="overview-copy">
-                Add each subject with a name and recognizable color.
-              </p>
-            )}
+          <div className="overview-card-body">
+            <p className="section-kicker">Course library</p>
+            <h2>
+              {courses.length ? "Your subjects are ready" : "Build your course list"}
+            </h2>
+            <div className="course-preview">
+              {courses.length ? (
+                courses.slice(0, 3).map((course) => (
+                  <span key={course.id}>
+                    <i style={{ "--course-color": course.color }} />
+                    {course.name}
+                  </span>
+                ))
+              ) : (
+                <p className="overview-copy">
+                  Add each subject with a name and recognizable color.
+                </p>
+              )}
+            </div>
           </div>
           <button
             className="text-link"
@@ -490,6 +515,88 @@ function DashboardView({ courses, profile, onNavigate }) {
             type="button"
           >
             {courses.length ? "Manage courses" : "Add a course"}
+            <span aria-hidden="true">→</span>
+          </button>
+        </article>
+
+        <article className="overview-card">
+          <div className="overview-card-heading">
+            <div className="overview-icon overview-icon--tasks" aria-hidden="true">
+              <span>✓</span>
+            </div>
+            <span className="overview-status">
+              {taskCounts.active} active
+            </span>
+          </div>
+          <div className="overview-card-body">
+            <p className="section-kicker">Task progress</p>
+            <h2>
+              {activeTask
+                ? activeTask.title
+                : tasks.length
+                  ? "Choose your current task"
+                  : "Plan your focused work"}
+            </h2>
+            {activeTask && activeTaskCourse ? (
+              <div
+                className="dashboard-task-progress"
+                style={{ "--course-color": activeTaskCourse.color }}
+              >
+                <span className="task-course">
+                  <i aria-hidden="true" />
+                  {activeTaskCourse.name}
+                </span>
+                <strong>
+                  {activeTask.completedPomodoros ?? 0} /{" "}
+                  {activeTask.estimatedPomodoros} Pomodoros
+                </strong>
+              </div>
+            ) : (
+              <p className="overview-copy">
+                {tasks.length
+                  ? `${completedPomodoros} of ${estimatedPomodoros} estimated Pomodoros completed across your tasks.`
+                  : "Add a course-linked task, then select it for your next Focus session."}
+              </p>
+            )}
+          </div>
+          <button
+            className="text-link"
+            onClick={() => onNavigate("tasks")}
+            type="button"
+          >
+            {tasks.length ? "Manage tasks" : "Add a task"}
+            <span aria-hidden="true">→</span>
+          </button>
+        </article>
+
+        <article className="overview-card">
+          <div className="overview-card-heading">
+            <div className="overview-icon overview-icon--timer" aria-hidden="true">
+              <span />
+            </div>
+            <span className="overview-status">
+              {timerSettings.focusMinutes} min Focus
+            </span>
+          </div>
+          <div className="overview-card-body">
+            <p className="section-kicker">Study timer</p>
+            <h2>{activeTask ? "Your next session is ready" : "Make this time count"}</h2>
+            <p className="overview-copy">
+              {activeTask
+                ? `Continue working on “${activeTask.title}” with a focused session.`
+                : "Choose a current task, start the clock, and give one session your attention."}
+            </p>
+            <p className="dashboard-cycle-progress">
+              {completedFocusSessions} of {timerSettings.focusSessionsPerCycle}{" "}
+              Focus sessions completed in this cycle
+            </p>
+          </div>
+          <button
+            className="text-link"
+            onClick={() => onNavigate("timer")}
+            type="button"
+          >
+            Open timer
             <span aria-hidden="true">→</span>
           </button>
         </article>
@@ -501,7 +608,10 @@ function DashboardView({ courses, profile, onNavigate }) {
         </span>
         <div>
           <strong>Your information stays on this device</strong>
-          <p>StudyForge saves your profile and courses in this browser.</p>
+          <p>
+            StudyForge saves your profile and courses in this browser. Tasks and
+            session progress clear on reload until Milestone 8.
+          </p>
         </div>
       </aside>
     </section>
@@ -795,11 +905,13 @@ function CourseDeleteBlocked({ course, linkedTaskCount, onClose, onViewTasks }) 
 }
 
 function TasksView({
+  activeTaskId,
   courses,
   onAdd,
   onDelete,
   onEdit,
   onNavigate,
+  onSetActiveTask,
   onToggleComplete,
   tasks,
 }) {
@@ -965,7 +1077,7 @@ function TasksView({
                   <li
                     className={`task-card${
                       task.isCompleted ? " task-card--completed" : ""
-                    }`}
+                    }${task.id === activeTaskId ? " task-card--current" : ""}`}
                     key={task.id}
                     style={{ "--course-color": course.color }}
                   >
@@ -989,7 +1101,11 @@ function TasksView({
                             task.isCompleted ? " task-status--completed" : ""
                           }`}
                         >
-                          {task.isCompleted ? "Completed" : "Active"}
+                          {task.isCompleted
+                            ? "Completed"
+                            : task.id === activeTaskId
+                              ? "Current task"
+                              : "Active"}
                         </span>
                       </div>
                       <div className="task-meta">
@@ -998,14 +1114,25 @@ function TasksView({
                           {course.name}
                         </span>
                         <span>
-                          Estimated {task.estimatedPomodoros}{" "}
-                          {task.estimatedPomodoros === 1
-                            ? "Pomodoro"
-                            : "Pomodoros"}
+                          {task.completedPomodoros ?? 0} /{" "}
+                          {task.estimatedPomodoros} Pomodoros completed
                         </span>
                       </div>
                     </div>
                     <div className="task-actions">
+                      {!task.isCompleted && (
+                        <button
+                          className="text-button"
+                          onClick={() =>
+                            onSetActiveTask(
+                              task.id === activeTaskId ? null : task.id,
+                            )
+                          }
+                          type="button"
+                        >
+                          {task.id === activeTaskId ? "Clear current" : "Set current"}
+                        </button>
+                      )}
                       <button
                         className="text-button"
                         onClick={() => onEdit(task)}
@@ -1230,22 +1357,30 @@ function TimerSettings({
 }
 
 function TimerView({
+  activeTask,
+  activeTaskCourse,
+  activeTaskId,
   completedFocusSessions,
   completionMessage,
+  courses,
   modeId,
   onModeChange,
+  onNavigate,
   onPause,
   onReset,
   onRestoreDefaults,
   onSaveDurations,
   onStart,
+  onSetActiveTask,
   onToggleAutoStart,
   onToggleSound,
   remainingSeconds,
   settings,
   status,
+  tasks,
 }) {
   const activeMode = getTimerMode(modeId);
+  const selectableTasks = tasks.filter((task) => !task.isCompleted);
   const primaryAction = status === "running" ? onPause : onStart;
   const primaryLabel =
     status === "running" ? "Pause" : status === "paused" ? "Resume" : "Start";
@@ -1264,6 +1399,84 @@ function TimerView({
           </p>
         </div>
       </div>
+
+      <section className="active-task-panel" aria-labelledby="active-task-title">
+        <div className="active-task-heading">
+          <div>
+            <p className="section-kicker">Current study task</p>
+            <h2 id="active-task-title">
+              {activeTask ? activeTask.title : "Choose a task for this session"}
+            </h2>
+          </div>
+          {activeTask && (
+            <button
+              className="text-button"
+              onClick={() => onSetActiveTask(null)}
+              type="button"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {activeTask && activeTaskCourse ? (
+          <div
+            className="active-task-details"
+            style={{ "--course-color": activeTaskCourse.color }}
+          >
+            <span className="task-course">
+              <i aria-hidden="true" />
+              {activeTaskCourse.name}
+            </span>
+            <strong>
+              {activeTask.completedPomodoros ?? 0} /{" "}
+              {activeTask.estimatedPomodoros} Pomodoros completed
+            </strong>
+          </div>
+        ) : (
+          <p className="active-task-copy">
+            {selectableTasks.length
+              ? "A completed Focus session will count toward the task selected here."
+              : tasks.length
+                ? "All tasks are completed. Reopen a task to select it again."
+                : "Create a task first, then return here to connect it to Focus sessions."}
+          </p>
+        )}
+
+        {selectableTasks.length ? (
+          <label className="active-task-select">
+            <span>{activeTask ? "Change task" : "Active task"}</span>
+            <select
+              className="text-input select-input"
+              onChange={(event) => onSetActiveTask(event.target.value || null)}
+              value={activeTaskId ?? ""}
+            >
+              <option value="">No active task</option>
+              {selectableTasks.map((task) => {
+                const course = courses.find(
+                  (candidate) => candidate.id === task.courseId,
+                );
+
+                return (
+                  <option key={task.id} value={task.id}>
+                    {task.title}
+                    {course ? ` — ${course.name}` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+        ) : (
+          <button
+            className="text-link active-task-link"
+            onClick={() => onNavigate("tasks")}
+            type="button"
+          >
+            {tasks.length ? "View tasks" : "Create a task"}
+            <span aria-hidden="true">→</span>
+          </button>
+        )}
+      </section>
 
       <section className="timer-panel" aria-label={`${activeMode.label} timer`}>
         <div className="timer-modes" aria-label="Timer mode">
@@ -1339,6 +1552,7 @@ export default function App() {
   const [courses, setCourses] = useState(loadCourses);
   const [profile, setProfile] = useState(loadProfile);
   const [tasks, setTasks] = useState([]);
+  const [activeTaskId, setActiveTaskId] = useState(null);
   const [activeView, setActiveView] = useState("timer");
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
   const [timerSettings, setTimerSettings] = useState(loadTimerSettings);
@@ -1357,6 +1571,7 @@ export default function App() {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const timerEndTimeRef = useRef(null);
   const completionHandledRef = useRef(false);
+  const activeTaskIdRef = useRef(null);
   const audioContextRef = useRef(null);
 
   useEffect(() => {
@@ -1385,6 +1600,18 @@ export default function App() {
       // Keep the timer usable if browser storage is unavailable.
     }
   }, [timerSettings]);
+
+  useEffect(() => {
+    if (
+      activeTaskId &&
+      !tasks.some(
+        (task) => task.id === activeTaskId && !task.isCompleted,
+      )
+    ) {
+      activeTaskIdRef.current = null;
+      setActiveTaskId(null);
+    }
+  }, [activeTaskId, tasks]);
 
   useEffect(() => {
     if (
@@ -1553,11 +1780,41 @@ export default function App() {
     setIsTaskFormOpen(true);
   }
 
+  function selectActiveTask(taskId) {
+    if (taskId === null) {
+      activeTaskIdRef.current = null;
+      setActiveTaskId(null);
+      return;
+    }
+
+    const taskCanBeSelected = tasks.some(
+      (task) => task.id === taskId && !task.isCompleted,
+    );
+    const nextTaskId = taskCanBeSelected ? taskId : null;
+
+    activeTaskIdRef.current = nextTaskId;
+    setActiveTaskId(nextTaskId);
+  }
+
   function toggleTaskComplete(taskId) {
+    const task = tasks.find((candidate) => candidate.id === taskId);
+
+    if (!task) {
+      return;
+    }
+
+    if (!task.isCompleted && activeTaskIdRef.current === taskId) {
+      selectActiveTask(null);
+    }
+
     setTasks((currentTasks) => toggleTaskInList(currentTasks, taskId));
   }
 
   function deleteTask() {
+    if (activeTaskIdRef.current === taskToDelete.id) {
+      selectActiveTask(null);
+    }
+
     setTasks((currentTasks) => deleteTaskFromList(currentTasks, taskToDelete.id));
     setTaskToDelete(null);
   }
@@ -1695,6 +1952,14 @@ export default function App() {
     let nextModeId = "focus";
 
     if (timerModeId === "focus") {
+      const selectedTaskId = activeTaskIdRef.current;
+
+      if (selectedTaskId) {
+        setTasks((currentTasks) =>
+          incrementTaskPomodoroInList(currentTasks, selectedTaskId),
+        );
+      }
+
       const nextFocusCount = completedFocusSessions + 1;
       const cycleIsComplete =
         nextFocusCount >= timerSettings.focusSessionsPerCycle;
@@ -1822,6 +2087,13 @@ export default function App() {
     }));
   }
 
+  const activeTask =
+    tasks.find(
+      (task) => task.id === activeTaskId && !task.isCompleted,
+    ) ?? null;
+  const activeTaskCourse =
+    courses.find((course) => course.id === activeTask?.courseId) ?? null;
+
   return (
     <main className="app-shell">
       <div className="ambient-glow ambient-glow--top" />
@@ -1856,14 +2128,19 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–6</span>
+        <span className="milestone-badge">Milestones 1–7</span>
       </header>
 
       {activeView === "dashboard" && (
         <DashboardView
+          activeTask={activeTask}
+          activeTaskCourse={activeTaskCourse}
+          completedFocusSessions={completedFocusSessions}
           courses={courses}
           onNavigate={setActiveView}
           profile={profile}
+          tasks={tasks}
+          timerSettings={timerSettings}
         />
       )}
       {activeView === "courses" && (
@@ -1876,11 +2153,13 @@ export default function App() {
       )}
       {activeView === "tasks" && (
         <TasksView
+          activeTaskId={activeTaskId}
           courses={courses}
           onAdd={openAddTaskForm}
           onDelete={setTaskToDelete}
           onEdit={editTask}
           onNavigate={setActiveView}
+          onSetActiveTask={selectActiveTask}
           onToggleComplete={toggleTaskComplete}
           tasks={tasks}
         />
@@ -1890,26 +2169,33 @@ export default function App() {
       )}
       {activeView === "timer" && (
         <TimerView
+          activeTask={activeTask}
+          activeTaskCourse={activeTaskCourse}
+          activeTaskId={activeTaskId}
           completedFocusSessions={completedFocusSessions}
           completionMessage={completionMessage}
+          courses={courses}
           modeId={timerModeId}
           onModeChange={changeTimerMode}
+          onNavigate={setActiveView}
           onPause={pauseTimer}
           onReset={resetTimer}
           onRestoreDefaults={restoreTimerDefaults}
           onSaveDurations={saveTimerDurations}
           onStart={startTimer}
+          onSetActiveTask={selectActiveTask}
           onToggleAutoStart={toggleAutoStart}
           onToggleSound={toggleCompletionSound}
           remainingSeconds={remainingSeconds}
           settings={timerSettings}
           status={timerStatus}
+          tasks={tasks}
         />
       )}
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.6</span>
+        <span>StudyForge v0.7</span>
       </footer>
 
       {isFormOpen && (

@@ -52,9 +52,21 @@ export function saveTaskInList(tasks, taskDetails, editingTaskId, createId) {
     {
       id: createId(),
       ...taskDetails,
+      completedPomodoros: 0,
       isCompleted: false,
     },
   ];
+}
+
+export function incrementTaskPomodoroInList(tasks, taskId) {
+  return tasks.map((task) =>
+    task.id === taskId && !task.isCompleted
+      ? {
+          ...task,
+          completedPomodoros: (task.completedPomodoros ?? 0) + 1,
+        }
+      : task,
+  );
 }
 
 export function toggleTaskInList(tasks, taskId) {

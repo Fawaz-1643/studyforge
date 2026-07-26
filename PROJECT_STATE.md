@@ -2,8 +2,7 @@
 
 ## Current milestone
 
-Milestones 1-6 are complete. Milestone 7, the active-task session workflow, is
-next.
+Milestones 1-7 are complete. Milestone 8, unified local persistence, is next.
 
 ## Technical foundation
 
@@ -70,6 +69,23 @@ next.
 - Course deletion protection while any linked tasks remain
 - Memory-only task data with no task `localStorage` persistence
 
+### Milestone 7 - Active-task session workflow
+
+- One current study task can be selected, changed, or cleared
+- Completed tasks are excluded from active-task selection
+- The timer shows the current task, linked course and color, and completed
+  Pomodoros compared with its estimate
+- Each naturally completed Focus session increments the selected task exactly
+  once
+- Break completions and manual timer actions do not increment task progress
+- Auto-start cycles preserve the exactly-once Focus increment rule
+- Completing or deleting the current task safely clears the selection
+- Missing or deleted tasks cannot receive progress
+- Task estimates remain unchanged and reaching an estimate does not complete a
+  task automatically
+- The dashboard shows current-task and overall task progress
+- Task progress and current-task selection remain memory-only
+
 ## Current persistence
 
 Stored in `localStorage`:
@@ -85,7 +101,8 @@ Kept in memory and reset on reload:
 
 - Current timer mode, status, and remaining time
 - Completed Focus sessions in the current cycle
-- All tasks and their completion status
+- All tasks, their completion status, and completed Pomodoro counts
+- Current active-task selection
 
 Milestone 8 will introduce unified persistence for tasks, cycle progress,
 active selections, and the rest of the core application state.
@@ -97,9 +114,12 @@ active selections, and the rest of the core application state.
   sessions.
 - Timer completion uses in-app feedback and sound only; it does not use browser
   or operating-system notifications.
-- Tasks do not affect the timer in Milestone 6.
+- Only naturally completed Focus sessions update the selected task.
+- Breaks, pauses, resets, settings changes, and manual mode switches do not
+  update task progress.
 - Pomodoro estimates are planning values and do not change when timer sessions
   finish.
+- Reaching a task estimate does not automatically complete the task.
 - Every task must reference an existing course, and a course with linked tasks
   cannot be deleted.
 - No session history, statistics, XP, streaks, levels, or achievements have
@@ -108,12 +128,12 @@ active selections, and the rest of the core application state.
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after Milestone 6
-- Project version: 0.6.0
+- Latest verified status: passing after Milestone 7 on July 26, 2026
+- Build result: 30 modules transformed; production bundle completed successfully
+- Project version: 0.7.0
 
 ## Next milestone
 
-Milestone 7 will connect a selected active task to completed Focus sessions,
-show that task near the timer, and add task progress to the dashboard. It must
-increment progress exactly once per completed Focus session without changing
-the task's estimate.
+Milestone 8 will add unified local persistence for tasks, completed task
+Pomodoros, timer cycle progress, active selections, and the rest of the core
+application state, with safe fallbacks for missing or malformed saved data.
