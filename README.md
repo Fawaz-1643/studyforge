@@ -4,7 +4,7 @@ StudyForge is a dark-mode university study planner built one small milestone at
 a time. This repository currently contains **Milestone 5: timer settings,
 automatic session cycles, and completion feedback**.
 
-Tasks, statistics, persistence for timer data, and the XP system belong to later
+Tasks, statistics, unified persistence, and the XP system belong to later
 milestones.
 
 ## What Milestones 1–5 include
@@ -27,12 +27,14 @@ milestones.
 - Automatically move from Focus to the correct Break and from a Break to Focus
 - Optionally start the next timer automatically
 - Show an in-app completion message and optionally play a short sound
+- Save timer durations, cycle length, auto-start, and sound preferences in
+  `localStorage`
 - A responsive dark design that works on phones and larger screens
 
-The profile and courses are stored only on the device and browser where they
-were created. Clearing that browser's site data will also clear them. The timer,
-timer settings, and cycle progress are kept only in memory and reset when the
-page is reloaded.
+The profile, courses, and timer settings are stored only on the device and
+browser where they were created. Clearing that browser's site data will also
+clear them. The active timer and completed Focus count in the current cycle are
+kept only in memory and reset when the page is reloaded.
 
 ## Run the project locally
 
@@ -76,6 +78,7 @@ studyforge/
 ├── .gitignore        # Files Git should not track
 ├── index.html        # The browser's starting document
 ├── package.json      # Project packages and commands
+├── PROJECT_STATE.md  # Completed work, persistence, and next milestone
 ├── vercel.json       # Vercel deployment settings
 └── vite.config.js    # Vite and React configuration
 ```

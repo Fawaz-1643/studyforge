@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 const COURSE_STORAGE_KEY = "studyforge:courses";
 const PROFILE_STORAGE_KEY = "studyforge:profile";
+const TIMER_SETTINGS_STORAGE_KEY = "studyforge:timer-settings";
 const COURSE_COLORS = [
   { name: "Violet", value: "#9b87f5" },
   { name: "Blue", value: "#5b9cf6" },
@@ -56,6 +57,53 @@ function loadProfile() {
     };
   } catch {
     return { university: "", fieldOfStudy: "" };
+  }
+}
+
+function loadTimerSettings() {
+  try {
+    const savedSettings = JSON.parse(
+      localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY),
+    );
+    const isWholeNumberBetween = (value, minimum, maximum) =>
+      Number.isInteger(value) && value >= minimum && value <= maximum;
+
+    return {
+      focusMinutes: isWholeNumberBetween(savedSettings?.focusMinutes, 1, 180)
+        ? savedSettings.focusMinutes
+        : DEFAULT_TIMER_SETTINGS.focusMinutes,
+      shortBreakMinutes: isWholeNumberBetween(
+        savedSettings?.shortBreakMinutes,
+        1,
+        180,
+      )
+        ? savedSettings.shortBreakMinutes
+        : DEFAULT_TIMER_SETTINGS.shortBreakMinutes,
+      longBreakMinutes: isWholeNumberBetween(
+        savedSettings?.longBreakMinutes,
+        1,
+        180,
+      )
+        ? savedSettings.longBreakMinutes
+        : DEFAULT_TIMER_SETTINGS.longBreakMinutes,
+      focusSessionsPerCycle: isWholeNumberBetween(
+        savedSettings?.focusSessionsPerCycle,
+        1,
+        99,
+      )
+        ? savedSettings.focusSessionsPerCycle
+        : DEFAULT_TIMER_SETTINGS.focusSessionsPerCycle,
+      autoStart:
+        typeof savedSettings?.autoStart === "boolean"
+          ? savedSettings.autoStart
+          : DEFAULT_TIMER_SETTINGS.autoStart,
+      soundEnabled:
+        typeof savedSettings?.soundEnabled === "boolean"
+          ? savedSettings.soundEnabled
+          : DEFAULT_TIMER_SETTINGS.soundEnabled,
+    };
+  } catch {
+    return { ...DEFAULT_TIMER_SETTINGS };
   }
 }
 
@@ -828,13 +876,11 @@ export default function App() {
   const [profile, setProfile] = useState(loadProfile);
   const [activeView, setActiveView] = useState("timer");
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
+  const [timerSettings, setTimerSettings] = useState(loadTimerSettings);
   const [remainingSeconds, setRemainingSeconds] = useState(
-    DEFAULT_TIMER_SETTINGS.focusMinutes * 60,
+    () => getTimerDurationSeconds(TIMER_MODES[0].id, timerSettings),
   );
   const [timerStatus, setTimerStatus] = useState("idle");
-  const [timerSettings, setTimerSettings] = useState({
-    ...DEFAULT_TIMER_SETTINGS,
-  });
   const [completedFocusSessions, setCompletedFocusSessions] = useState(0);
   const [completionMessage, setCompletionMessage] = useState("");
   const [editingCourse, setEditingCourse] = useState(null);
@@ -859,6 +905,17 @@ export default function App() {
       // Keep the profile form usable if browser storage is unavailable.
     }
   }, [profile]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        TIMER_SETTINGS_STORAGE_KEY,
+        JSON.stringify(timerSettings),
+      );
+    } catch {
+      // Keep the timer usable if browser storage is unavailable.
+    }
+  }, [timerSettings]);
 
   useEffect(() => {
     if (!isFormOpen && !courseToDelete) {
