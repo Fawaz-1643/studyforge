@@ -942,7 +942,7 @@ function ProfilePanel({ profile, onSave }) {
               className="text-input"
               maxLength={80}
               onChange={(event) => setUniversity(event.target.value)}
-              placeholder="e.g. University of Dubai"
+              placeholder="e.g. Khalifa University"
               value={university}
             />
           </label>
@@ -980,6 +980,147 @@ function ProfilePanel({ profile, onSave }) {
         </div>
       </form>
     </section>
+  );
+}
+
+function ProfileFormDialog({ onCancel, onSave, profile }) {
+  const [university, setUniversity] = useState(profile.university);
+  const [fieldOfStudy, setFieldOfStudy] = useState(profile.fieldOfStudy);
+  const universityInputRef = useRef(null);
+  const dialogRef = useModalDialog(onCancel, universityInputRef);
+  const hasProfile = Boolean(profile.university || profile.fieldOfStudy);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    onSave({
+      university: university.trim(),
+      fieldOfStudy: fieldOfStudy.trim(),
+    });
+  }
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onCancel}>
+      <section
+        aria-describedby="dashboard-profile-form-description"
+        aria-labelledby="dashboard-profile-form-title"
+        aria-modal="true"
+        className="modal profile-form-dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex="-1"
+      >
+        <div className="modal-heading">
+          <div>
+            <p className="section-kicker">
+              {hasProfile ? "Update profile" : "Student profile"}
+            </p>
+            <h2 id="dashboard-profile-form-title">
+              {hasProfile ? "Edit your identity" : "Set up your identity"}
+            </h2>
+          </div>
+          <button
+            aria-label="Close profile editor"
+            className="icon-button"
+            onClick={onCancel}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
+
+        <p className="modal-copy" id="dashboard-profile-form-description">
+          Add either detail to give your Dashboard and Profile a little academic
+          context. Both stay only on this device.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="profile-form-dialog-fields">
+            <label>
+              <span className="field-label">
+                University <span className="optional-label">Optional</span>
+              </span>
+              <input
+                autoComplete="organization"
+                className="text-input"
+                maxLength={80}
+                onChange={(event) => setUniversity(event.target.value)}
+                placeholder="e.g. Khalifa University"
+                ref={universityInputRef}
+                value={university}
+              />
+            </label>
+            <label>
+              <span className="field-label">
+                Field of study <span className="optional-label">Optional</span>
+              </span>
+              <input
+                autoComplete="off"
+                className="text-input"
+                maxLength={80}
+                onChange={(event) => setFieldOfStudy(event.target.value)}
+                placeholder="e.g. Electrical Engineering"
+                value={fieldOfStudy}
+              />
+            </label>
+          </div>
+
+          <div className="modal-actions">
+            <button
+              className="button button--secondary"
+              onClick={onCancel}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="button button--primary"
+              disabled={!university.trim() && !fieldOfStudy.trim()}
+              type="submit"
+            >
+              {hasProfile ? "Save changes" : "Save profile"}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function DashboardIdentityCard({ onEdit, profile }) {
+  const hasProfile = Boolean(profile.university || profile.fieldOfStudy);
+  const title = hasProfile
+    ? profile.fieldOfStudy || profile.university
+    : "Set up your identity";
+  const detail = hasProfile
+    ? profile.fieldOfStudy && profile.university
+      ? profile.university
+      : "Saved on this device"
+    : "Add your university or field of study.";
+
+  return (
+    <aside
+      aria-label={hasProfile ? "Saved academic identity" : "Set up academic identity"}
+      className={`dashboard-identity-card${
+        hasProfile ? " dashboard-identity-card--saved" : ""
+      }`}
+    >
+      <div className="dashboard-identity-mark" aria-hidden="true">
+        <span />
+      </div>
+      <div className="dashboard-identity-copy">
+        <p className="section-kicker">Academic identity</p>
+        <strong>{title}</strong>
+        <span>{detail}</span>
+      </div>
+      <button
+        className="button button--secondary"
+        onClick={onEdit}
+        type="button"
+      >
+        {hasProfile ? "Edit" : "Set up"}
+      </button>
+    </aside>
   );
 }
 
@@ -1150,6 +1291,7 @@ function DashboardView({
   onQuickFocus,
   onResetTimer,
   onStartTimer,
+  onEditProfile,
   profile,
   rewards,
   sessionHistory,
@@ -1205,6 +1347,7 @@ function DashboardView({
             Everything you’ve set up so far, kept simple and easy to reach.
           </p>
         </div>
+        <DashboardIdentityCard onEdit={onEditProfile} profile={profile} />
       </div>
 
       <DashboardQuickTimer
@@ -2774,7 +2917,7 @@ function ProfileView({
             <span className="status-dot" />
             Student profile
           </div>
-          <h1 id="profile-page-title">Your StudyForge journey</h1>
+          <h1 id="profile-page-title">Your journey</h1>
           <p className="page-copy">
             Your academic identity, focused work, and current study rhythm in one
             place.
@@ -3407,6 +3550,7 @@ export default function App() {
   const [rewardNoticePaused, setRewardNoticePaused] = useState(false);
   const [taskCompletionNotice, setTaskCompletionNotice] = useState(null);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [isProfileFormOpen, setIsProfileFormOpen] = useState(false);
   const [recoveryNotice, setRecoveryNotice] = useState(
     initialState.recoveryMessage ?? "",
   );
@@ -4478,6 +4622,7 @@ export default function App() {
             onQuickFocus={startDashboardQuickFocus}
             onResetTimer={resetTimer}
             onStartTimer={startTimer}
+            onEditProfile={() => setIsProfileFormOpen(true)}
             profile={profile}
             rewards={rewards}
             sessionHistory={sessionHistory}
@@ -4565,7 +4710,7 @@ export default function App() {
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.11.5</span>
+        <span>StudyForge v1.0.0</span>
       </footer>
 
       <div
@@ -4612,6 +4757,16 @@ export default function App() {
           onCancel={closeTaskForm}
           onSave={saveTask}
           task={editingTask}
+        />
+      )}
+      {isProfileFormOpen && (
+        <ProfileFormDialog
+          onCancel={() => setIsProfileFormOpen(false)}
+          onSave={(nextProfile) => {
+            saveProfile(nextProfile);
+            setIsProfileFormOpen(false);
+          }}
+          profile={profile}
         />
       )}
       {taskToDelete && (

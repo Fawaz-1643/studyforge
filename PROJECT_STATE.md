@@ -2,7 +2,9 @@
 
 ## Current milestone
 
-Milestones 1-11.5 are complete. Milestone 12 is next.
+Milestones 1-11.5 are complete. Milestone 12 pre-deployment release
+preparation is complete for version 1.0.0. Commit, push, and Vercel deployment
+remain pending their separate approval gates.
 
 ## Technical foundation
 
@@ -262,7 +264,7 @@ Milestones 1-11.5 are complete. Milestone 12 is next.
   time, and completed-versus-estimated Pomodoros
 - Profile information now appears in a compact section near the bottom of the
   Dashboard instead of occupying a large overview card
-- The Profile view is now headed “Your StudyForge journey,” and its saved
+- The Profile view is now headed “Your journey,” and its saved
   identity panel uses “Your academic identity” instead of the generic “Your
   study space”
 - A personal study snapshot on Profile derives current Level and visible XP,
@@ -322,6 +324,11 @@ Milestones 1-11.5 are complete. Milestone 12 is next.
   achievements, and one-time reward records
 - `prefers-reduced-motion` reduces animations and transitions to effectively
   immediate state changes across the whole application
+- The version 1.0 release preparation added a compact Dashboard academic
+  identity tile beside the main heading. It shows a setup state when no profile
+  exists, opens the same accessible local profile workflow in a modal, and
+  updates to the saved university or field of study without adding accounts or
+  cloud persistence.
 
 ## Current persistence
 
@@ -388,19 +395,44 @@ failures fall back to in-memory operation.
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after the interactive Milestone 11.5 polish
-  pass on July 26, 2026
-- Build result: 34 modules transformed; production bundle completed successfully
-- Focused checks: old-state migration without retroactive bonuses, fractional
-  Focus XP, one-time task bonuses, storage-version-4 save/reload restoration,
-  malformed-bonus fallback, and the production build passed
-- Browser-check note: the workspace sandbox blocked a local preview server, so
-  a fresh interactive browser pass must be completed during user testing
-- Project version: 0.11.5
+- Latest verified status: pre-deployment release checks passing on July 26,
+  2026
+- Build result: 34 modules transformed; production bundle completed
+  successfully in 383 ms
+- Production output: 0.65 kB HTML, 82.98 kB CSS, and 295.19 kB JavaScript
+  before gzip
+- Focused utility checks passed for valid and invalid task input, fixed
+  estimates, completion filtering, supported storage migration, no retroactive
+  Focus bonus, fractional XP restoration, malformed-data fallback,
+  storage-access failure, one-time task bonuses, History snapshots, statistics,
+  and level progression
+- The pre-release browser audit passed all six views at wide desktop, tablet,
+  and narrow mobile widths without horizontal page overflow or console errors
+- Fresh-origin Dashboard landing, restoration of every valid last-open view,
+  and StudyForge brand navigation back to Dashboard passed
+- The Dashboard identity setup and edit dialog passed desktop and mobile layout,
+  initial-focus, focus-containment, Escape, inert-background, scroll-lock,
+  focus-restoration, save, immediate tile update, and reload-persistence checks
+- The custom course filter passed Enter, Home, End, and Escape selection
+  checks; destructive dialogs retained safe initial focus
+- A natural one-minute Focus session created exactly one History record,
+  incremented the selected task exactly once, and awarded the expected
+  minute-based and 10% completion XP exactly once
+- Pause, add-minute, add-cycle, reset, interrupted-reload, fullscreen-control,
+  and Document Picture-in-Picture checks preserved History, task progress, XP,
+  and the memory-only countdown rules
+- Seven privacy-safe repository screenshots were captured and visually checked
+  for readability, current interface accuracy, relative paths, and absence of
+  private data or browser chrome
+- Project version: 1.0.0
 
-## Next milestone
+## Release work remaining
 
-Milestone 12 remains the release and deployment milestone defined in the shared
-build brief: final README and screenshots, regression checks, a clean production
-build, GitHub push, Vercel deployment, and live-link refresh testing. No Stage 1
-or Stage 2 expansion features should be added during release.
+- Record the approved release commit after the user reviews the diff
+- Push the approved release to the existing GitHub repository
+- Deploy the approved commit to Vercel
+- Verify the public application, refresh behavior, responsive layouts, local
+  persistence, and malformed-data recovery
+- Add the final Git commit and public URL to this handoff
+
+No Stage 1 or Stage 2 expansion work is part of this release.
