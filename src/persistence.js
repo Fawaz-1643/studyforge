@@ -4,7 +4,8 @@ const APP_STORAGE_KEY = "studyforge:app-state";
 const LEGACY_COURSE_STORAGE_KEY = "studyforge:courses";
 const LEGACY_PROFILE_STORAGE_KEY = "studyforge:profile";
 const LEGACY_TIMER_SETTINGS_STORAGE_KEY = "studyforge:timer-settings";
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
+const MILESTONE_10_STORAGE_VERSION = 3;
 const MILESTONE_9_STORAGE_VERSION = 2;
 const MILESTONE_8_STORAGE_VERSION = 1;
 
@@ -55,6 +56,14 @@ function readStoredJson(storage, key) {
     return JSON.parse(storedValue);
   } catch {
     return undefined;
+  }
+}
+
+function hasStoredValue(storage, key) {
+  try {
+    return storage?.getItem(key) !== null && storage?.getItem(key) !== undefined;
+  } catch {
+    return false;
   }
 }
 
@@ -196,7 +205,7 @@ function normalizeTasks(value, courses) {
   });
 }
 
-function normalizeSessionHistory(value) {
+function normalizeSessionHistory(value, allowFocusBonus = false) {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -228,7 +237,20 @@ function normalizeSessionHistory(value) {
       id,
       completedAt: new Date(completedAtTimestamp).toISOString(),
       durationMinutes,
+      focusBonusXp: 0,
     };
+    const focusBonusXp = session.focusBonusXp;
+    const expectedFocusBonusXp = durationMinutes / 10;
+
+    if (
+      allowFocusBonus &&
+      typeof focusBonusXp === "number" &&
+      Number.isFinite(focusBonusXp) &&
+      Math.abs(focusBonusXp - expectedFocusBonusXp) < 0.000001
+    ) {
+      normalizedSession.focusBonusXp =
+        Math.round(focusBonusXp * 10) / 10;
+    }
     const taskId = normalizeId(session.taskId);
     const taskTitle = normalizeText(session.taskTitle, TASK_TITLE_MAX_LENGTH);
 
@@ -269,14 +291,18 @@ function normalizeActiveView(value) {
 
 export function loadAppState(storage) {
   const selectedStorage = storage ?? getBrowserStorage();
+  const hasUnifiedStoredValue = hasStoredValue(
+    selectedStorage,
+    APP_STORAGE_KEY,
+  );
   const storedState = readStoredJson(selectedStorage, APP_STORAGE_KEY);
-  const currentState =
+  const storedStateIsSupported =
     isRecord(storedState) &&
     (storedState.version === STORAGE_VERSION ||
+      storedState.version === MILESTONE_10_STORAGE_VERSION ||
       storedState.version === MILESTONE_9_STORAGE_VERSION ||
-      storedState.version === MILESTONE_8_STORAGE_VERSION)
-      ? storedState
-      : {};
+      storedState.version === MILESTONE_8_STORAGE_VERSION);
+  const currentState = storedStateIsSupported ? storedState : {};
 
   const legacyCourses = readStoredJson(
     selectedStorage,
@@ -333,17 +359,41 @@ export function loadAppState(storage) {
     : null;
   const sessionHistory =
     currentState.version === STORAGE_VERSION ||
+    currentState.version === MILESTONE_10_STORAGE_VERSION ||
     currentState.version === MILESTONE_9_STORAGE_VERSION
-      ? normalizeSessionHistory(currentState.sessionHistory)
+      ? normalizeSessionHistory(
+          currentState.sessionHistory,
+          currentState.version === STORAGE_VERSION,
+        )
       : [];
   const rewards = normalizeRewards(
-    currentState.version === STORAGE_VERSION
+    currentState.version === STORAGE_VERSION ||
+      currentState.version === MILESTONE_10_STORAGE_VERSION
       ? currentState.rewards
       : undefined,
     sessionHistory,
     tasks,
   );
   const activeView = normalizeActiveView(currentState.activeView);
+  const repairedSupportedState =
+    storedStateIsSupported &&
+    ((Array.isArray(currentState.courses) &&
+      courses.length !== currentState.courses.length) ||
+      (Array.isArray(currentState.tasks) &&
+        tasks.length !== currentState.tasks.length) ||
+      (Array.isArray(currentState.sessionHistory) &&
+        sessionHistory.length !== currentState.sessionHistory.length) ||
+      (Object.hasOwn(currentState, "activeTaskId") &&
+        normalizeId(currentState.activeTaskId) &&
+        activeTaskId === null) ||
+      (Object.hasOwn(currentState, "activeView") &&
+        currentState.activeView !== activeView));
+  const recoveryMessage =
+    hasUnifiedStoredValue && !storedStateIsSupported
+      ? "Saved StudyForge data could not be restored, so the app opened with safe defaults."
+      : repairedSupportedState
+        ? "Some saved StudyForge data was repaired or skipped so the app could open safely."
+        : "";
 
   return {
     profile,
@@ -355,6 +405,7 @@ export function loadAppState(storage) {
     sessionHistory,
     rewards,
     activeView,
+    recoveryMessage,
   };
 }
 

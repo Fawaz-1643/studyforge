@@ -256,7 +256,8 @@ export function normalizeRewards(value, sessionHistory, tasks) {
   });
 
   const focusXp = sessionHistory.reduce(
-    (total, session) => total + session.durationMinutes,
+    (total, session) =>
+      total + session.durationMinutes + (session.focusBonusXp ?? 0),
     0,
   );
   const taskXp = taskBonuses.reduce((total, bonus) => total + bonus.xp, 0);

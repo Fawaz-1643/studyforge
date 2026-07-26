@@ -7,17 +7,21 @@ export function validateTaskDetails(details, courses) {
   const estimate = String(details.estimatedPomodoros);
 
   if (!title) {
-    return { error: "Enter a task title before saving." };
+    return { error: "Enter a task title before saving.", field: "title" };
   }
 
   if (title.length > TASK_TITLE_MAX_LENGTH) {
     return {
       error: `Keep the task title to ${TASK_TITLE_MAX_LENGTH} characters or fewer.`,
+      field: "title",
     };
   }
 
   if (!courses.some((course) => course.id === details.courseId)) {
-    return { error: "Choose an existing course for this task." };
+    return {
+      error: "Choose an existing course for this task.",
+      field: "course",
+    };
   }
 
   if (
@@ -27,11 +31,13 @@ export function validateTaskDetails(details, courses) {
   ) {
     return {
       error: `Enter an estimate from ${TASK_ESTIMATE_MIN} to ${TASK_ESTIMATE_MAX} whole Pomodoro sessions.`,
+      field: "estimate",
     };
   }
 
   return {
     error: "",
+    field: null,
     taskDetails: {
       title,
       courseId: details.courseId,

@@ -23,12 +23,14 @@ export function createFocusSessionRecord({
   course,
   createId,
   durationMinutes,
+  focusBonusXp = 0,
   task,
 }) {
   const session = {
     id: createId(),
     completedAt: new Date(completedAt).toISOString(),
     durationMinutes,
+    focusBonusXp,
   };
 
   if (!task) {

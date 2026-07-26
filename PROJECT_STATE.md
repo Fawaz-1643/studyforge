@@ -2,14 +2,14 @@
 
 ## Current milestone
 
-Milestones 1-10 are complete. Milestone 11, quality and polish, is next.
+Milestones 1-11.5 are complete. Milestone 12 is next.
 
 ## Technical foundation
 
 - React 19 with Vite and JavaScript
 - Responsive dark interface with a violet primary accent
-- A single-page application with Dashboard, Courses, Tasks, Timer, and Profile
-  views
+- A single-page application with Dashboard, Courses, Tasks, Timer, History, and
+  Profile views
 - Browser `localStorage` for approved device-local persistence
 - No login, backend, database, paid API, social feature, or university
   integration
@@ -170,6 +170,159 @@ Milestones 1-10 are complete. Milestone 11, quality and polish, is next.
   navigation, course safeguards, task estimates, and memory-only countdown
   behavior preserved
 
+### Milestone 11 - Quality and polish
+
+- The established dark visual identity, violet action color, restrained amber
+  reward color, balanced Dashboard, card treatments, and navigation model were
+  preserved rather than redesigned
+- Shared page width increased responsively to a bounded 1440px maximum, with
+  deliberate desktop, tablet, and mobile edge gutters
+- A semantic main-content region and keyboard skip link were added without
+  changing the visible navigation structure
+- Keyboard focus indicators remain consistent across buttons, links, fields,
+  timer modes, toggles, and course-color controls
+- Every modal now receives sensible initial focus, contains Tab and Shift+Tab
+  navigation, closes with Escape, makes background content inert, locks
+  background scrolling, and restores focus safely
+- Destructive confirmations initially focus the safe action and retain explicit
+  language about what will be removed or preserved
+- Modal content can scroll within short browser windows so headings, fields,
+  errors, and actions are not clipped
+- Repeated course, task, active-task, and timer actions have specific accessible
+  names
+- Task and timer-setting validation identifies the invalid field, associates
+  its error text, and moves focus to the field that needs correction
+- Screen-reader status feedback was added for profile, course, task, active-task,
+  completion, reopen, and deletion actions
+- Reward feedback remains brief and dismissible but pauses while hovered or
+  keyboard-focused
+- Malformed or partially repaired unified saved data produces a dismissible,
+  readable recovery message while safe defaults and in-memory operation remain
+  available
+- Existing reduced-motion behavior, long-content wrapping, empty states,
+  disabled states, and responsive navigation were reviewed and retained
+- All Milestones 1-10 timer, task, History, persistence, reward, achievement,
+  migration, and exactly-once completion rules remain unchanged
+
+### Milestone 11.5 - Interface expansion
+
+- The Timer now uses a responsive circular SVG progress ring that drains as the
+  in-memory countdown advances
+- Focus uses the existing violet action family, Short Break uses restrained
+  teal, and Long Break uses blue while amber remains reserved for rewards
+- The time, active mode, and running, paused, or ready status remain readable
+  inside the circular timer at desktop, tablet, and mobile sizes
+- Timer-page and Dashboard rings use a more spacious scale with smaller timer
+  numerals so the mode, time, play control, and status do not feel crowded
+- Reduced-motion preferences disable the ring and dropdown transitions without
+  hiding progress or state
+- The optional activity chooser now follows the Timer so the complete timer is
+  the first major control visible on the page
+- Play and pause sit inside the ring, with four labelled surrounding controls
+  for adding one minute, adding one Focus interval to the current cycle,
+  resetting, and floating the timer
+- A separate centred Full screen control sits beneath the larger cycle-progress
+  label and expands the complete Timer panel with responsive spacing; the same
+  control or the browser's Escape behavior exits full screen
+- Fullscreen changes are detected through the browser event so the accessible
+  name and visible label stay accurate, failures receive a polite status
+  message, and unsupported browsers expose a disabled control
+- Fullscreen presentation remains entirely ephemeral and continues using the
+  original memory-only countdown, task, History, and exactly-once reward path
+- Adding a Focus interval changes only the temporary current-cycle target; it
+  does not add 25 minutes, persist a countdown, or award any progress
+- A user-triggered floating timer uses Document Picture-in-Picture for a true
+  always-on-top panel when supported and a compact popup fallback elsewhere
+- The floating timer is rendered from the main React tree and shares the same
+  memory-only timer state and original completion handler; it does not create a
+  second countdown, persisted target timestamp, reward path, or History path
+- Popup blocking or cancelled Picture-in-Picture produces an in-app status
+  message, reopening an existing floating timer focuses it, and closing either
+  window cleans up safely
+- Each naturally completed Focus session now earns an exact completion bonus of
+  10% of its focused minutes in addition to its minute-based XP
+- Fractional XP is retained internally and in persistence, while all visible XP
+  values show only their whole-number portion
+- The Focus-completion dialog itemizes minute XP, the completion bonus, an
+  optional one-time task bonus, and the combined session gain
+- When the selected task reaches its estimate, the completion dialog retains
+  manual task completion and can add the one-time task bonus to the same summary
+- The Dashboard is now a richer, naturally scrollable landing page while the six
+  navigation views remain separate
+- Dashboard additions use only existing task and History data: current-task
+  direction, today and current-week focus totals, active task count, seven-day
+  Focus trend, and the three most recent sessions
+- A Dashboard Quick Focus widget starts an unassigned default 25-minute Focus
+  session through the shared timer engine, without task progress
+- The Dashboard timer now includes compact Focus, Short Break, and Long Break
+  mode controls; selecting one updates the shared timer and its violet, teal, or
+  blue treatment
+- The former 2x2 overview was replaced by a responsive course grid with one
+  color-linked card per course, including active-task count, recorded Focus
+  time, and completed-versus-estimated Pomodoros
+- Profile information now appears in a compact section near the bottom of the
+  Dashboard instead of occupying a large overview card
+- The Profile view is now headed “Your StudyForge journey,” and its saved
+  identity panel uses “Your academic identity” instead of the generic “Your
+  study space”
+- A personal study snapshot on Profile derives current Level and visible XP,
+  active streak, all-time Focus time and sessions, course count, active and
+  completed task counts, and earned achievements from existing validated state
+- A separate Profile rhythm section summarizes the saved Focus, Short Break,
+  Long Break, and intervals-per-cycle settings while reiterating that active
+  countdown state remains memory-only
+- Profile snapshot and rhythm cards respond subtly on hover and collapse to
+  readable two-column and single-column arrangements at tablet and mobile sizes
+- A responsive educational section introduces the technique's origin, focus and
+  break rhythm, and broader planning method with an official source link and
+  clear non-affiliation note
+- The educational section has its own editorial treatment, CSS-built
+  tomato-timer illustration, visual three-step rhythm, and accessible FAQ
+  accordions covering duration, breaks, interruptions, unassigned sessions, and
+  Long Break timing
+- FAQ panels retain their content in the layout animation path so both opening
+  and closing animate on every interaction while `aria-expanded` and region
+  visibility remain synchronized
+- The full-width reward progress, achievements, compact header XP bar, and
+  local-data note remain intact
+- All native application dropdowns were replaced with one themed combobox and
+  listbox component for task-course selection, course filtering, and active-task
+  selection
+- The themed dropdown supports mouse and touch selection plus Enter, Space,
+  Escape, Tab, Home, End, and Arrow-key behavior, visible focus, selected-state
+  feedback, long labels, and bounded scrolling
+- The active-task dropdown receives a raised stacking layer while open so its
+  option list overlays the Timer settings panel instead of appearing beneath it
+- Existing manual task completion, fixed estimates, one-time task bonuses,
+  course deletion safeguards, memory-only countdown rules, and exactly-once
+  Focus updates remain unchanged
+- A restrained interaction-motion system now covers page entrance, the moving
+  desktop navigation indicator, button presses, dropdown and dialog entrance,
+  FAQ answers, course-card hover response, task completion and deletion,
+  progress bars, and History chart reveals
+- The desktop navigation indicator now measures the active button's rendered
+  position and width, including after responsive resizing, so every label and
+  icon remains precisely centered inside the violet surface
+- The Study Timer eyebrow uses the same green status dot as the other views
+- Major Dashboard sections use larger vertical intervals for clearer hierarchy,
+  while related profile and local-storage information remain grouped
+- Those Dashboard intervals are intentionally non-uniform: timer and editorial
+  transitions receive the largest pauses, data grids receive moderate spacing,
+  and the profile/local-data pair remains comparatively close
+- Additional hover response was added to Dashboard sections, recent-session
+  rows, profile identity, Pomodoro rhythm icons, and the active navigation icon
+- Running timer rings use a slow breathing glow in the active mode color;
+  pausing, resetting, or leaving the running state stops the ambient motion
+- Focus completion adds a small amber ring-burst around its existing summary
+  symbol without introducing full-screen confetti or reward-game visuals
+- The Pomodoro illustration uses very slow orbit and label movement, while
+  seven-day chart bars expose concise details on mouse hover and keyboard focus
+- Confirmed task deletion receives a short visual collapse before removal; the
+  underlying deletion rules still retain History snapshots, statistics, XP,
+  achievements, and one-time reward records
+- `prefers-reduced-motion` reduces animations and transitions to effectively
+  immediate state changes across the whole application
+
 ## Current persistence
 
 Stored together in one versioned `localStorage` record:
@@ -183,6 +336,7 @@ Stored together in one versioned `localStorage` record:
 - Completed Focus sessions in the current timer cycle
 - Active-task selection
 - Dated completed Focus-session history
+- Per-session Focus-completion bonus XP for new Milestone 11.5 sessions
 - XP, level progress, local-date streak data, earned achievements, and one-time
   task-completion reward records
 - Last open application page
@@ -193,14 +347,16 @@ Kept in memory and reset on reload:
 - Active countdown target timestamp and remaining time
 - In-app timer completion feedback
 
-StudyForge migrates valid Milestone 8 and Milestone 9 unified records into
-storage version 3. Valid Milestone 9 History records become the durable source
-for migrated Focus XP and streak progress. Previously completed tasks are
-marked as already handled without receiving retroactive task bonuses. When a
-usable unified record does not exist, StudyForge still migrates valid profile,
-course, and timer-setting values from the Milestones 1-7 storage keys. Loaded
-records, individual History entries, and reward data are validated before use,
-and storage-access failures fall back to in-memory operation.
+StudyForge saves the current schema as storage version 4. It migrates valid
+Milestone 8 and Milestone 9 unified records and the complete Milestone 10 reward
+state without awarding retroactive Focus-completion bonuses. Valid History
+records remain the durable source for Focus XP and streak progress. Previously
+completed tasks are marked as already handled without receiving retroactive
+task bonuses. When a usable unified record does not exist, StudyForge still
+migrates valid profile, course, and timer-setting values from the Milestones
+1-7 storage keys. Loaded records, individual History entries, reward data, and
+new per-session Focus bonuses are validated before use, and storage-access
+failures fall back to in-memory operation.
 
 ## Important scope decisions
 
@@ -219,9 +375,10 @@ and storage-access failures fall back to in-memory operation.
   cannot be deleted.
 - Historical task and course labels are snapshots; later edits or deletion do
   not rewrite already completed sessions.
-- Focus rewards use one XP per completed minute. Manual task completion uses a
-  one-time bonus of five XP per estimated Pomodoro; reopening a task cannot earn
-  that bonus again.
+- Focus rewards use one XP per completed minute plus an exact completion bonus
+  equal to 10% of the session duration. Manual task completion uses a one-time
+  bonus of five XP per estimated Pomodoro; reopening a task cannot earn that
+  bonus again.
 - Levels and achievements are derived from validated progress so contradictory
   saved reward values cannot create false unlocks.
 - No coins, currency, shops, purchasable rewards, avatars, fantasy artwork,
@@ -231,13 +388,19 @@ and storage-access failures fall back to in-memory operation.
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after Milestone 10 on July 26, 2026
-- Build result: 33 modules transformed; production bundle completed successfully
-- Project version: 0.10.0
+- Latest verified status: passing after the interactive Milestone 11.5 polish
+  pass on July 26, 2026
+- Build result: 34 modules transformed; production bundle completed successfully
+- Focused checks: old-state migration without retroactive bonuses, fractional
+  Focus XP, one-time task bonuses, storage-version-4 save/reload restoration,
+  malformed-bonus fallback, and the production build passed
+- Browser-check note: the workspace sandbox blocked a local preview server, so
+  a fresh interactive browser pass must be completed during user testing
+- Project version: 0.11.5
 
 ## Next milestone
 
-Milestone 11 will focus on quality and polish: mobile layout, keyboard
-navigation, readable contrast, labels, confirmations, empty states, error
-messages, consistent spacing, and restrained motion. It must not add new product
-features except fixes needed for usability.
+Milestone 12 remains the release and deployment milestone defined in the shared
+build brief: final README and screenshots, regression checks, a clean production
+build, GitHub push, Vercel deployment, and live-link refresh testing. No Stage 1
+or Stage 2 expansion features should be added during release.
