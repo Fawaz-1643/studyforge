@@ -1,16 +1,16 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 7: an active-task
-session workflow**.
+a time. This repository currently contains **Milestone 8: unified local
+persistence**.
 
-Unified persistence, session history, statistics, and the XP system belong to
-later milestones.
+Session history, statistics, and the XP system belong to later milestones.
 
-## What Milestones 1–7 include
+## What Milestones 1–8 include
 
 - Navigate between a dashboard, course library, task manager, timer, and student
   profile
+- Open Dashboard on a first visit and restore the last valid page after reload
 - See a simple dashboard overview of saved profile and course information
 - Add an optional university and field of study to a student profile
 - Edit the profile and show saved details above the course library
@@ -49,17 +49,33 @@ later milestones.
 - Keep breaks and manual timer actions from changing task progress
 - Clear the current-task selection when that task is completed or deleted
 - See active-task and overall task progress on the dashboard
+- Restore tasks, task completion, completed task Pomodoros, current-cycle
+  progress, and the current-task selection after a reload
+- Load and save the durable app state through one versioned persistence layer
+- Migrate valid profile, course, and timer-setting data from the earlier storage
+  format
+- Reject or safely repair malformed stored records without preventing the app
+  from opening
+- Keep only tasks linked to existing courses and only restore a current task
+  when it exists and remains active
 - A responsive dark design that works on phones and larger screens
 
-The profile, courses, and timer settings are stored only on the device and
-browser where they were created. Clearing that browser's site data will also
-clear them. The active timer and completed Focus count in the current cycle are
-kept only in memory and reset when the page is reloaded.
+The profile, courses, tasks, task progress, timer settings, completed Focus
+sessions in the current cycle, and current-task selection are stored only on the
+device and browser where they were created. Clearing that browser's site data
+will also clear them.
 
-Tasks, completed task Pomodoros, and the current-task selection are deliberately
-kept in memory only during Milestone 7. Reloading the page clears all of them.
-Their persistence will be added as part of the unified local persistence work
-in Milestone 8.
+The last open page is saved too. New visitors and invalid saved page values open
+Dashboard, and the StudyForge logo returns there as the application home.
+
+The active or paused countdown remains deliberately memory-only. Reloading does
+not reconstruct its mode, status, target timestamp, or remaining seconds; the
+timer returns to a fresh Focus session while retaining valid cycle progress.
+
+StudyForge automatically imports valid profile, course, and timer-setting data
+from the Milestones 1–7 storage keys when no usable unified state exists.
+Unavailable, malformed, outdated, or partially invalid browser data falls back
+safely, and browser-storage failures do not prevent in-memory use.
 
 Task estimates remain planning values. A naturally completed Focus session
 increments the selected task's completed-Pomodoro count without changing its
@@ -104,6 +120,7 @@ studyforge/
 ├── src/
 │   ├── App.jsx       # The visible React screen
 │   ├── main.jsx      # Connects React to the web page
+│   ├── persistence.js # Unified storage, validation, and legacy migration
 │   ├── taskUtils.js  # Task validation, filtering, and list rules
 │   └── styles.css    # The complete visual theme
 ├── .gitignore        # Files Git should not track

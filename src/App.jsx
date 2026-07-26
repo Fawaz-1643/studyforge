@@ -12,10 +12,12 @@ import {
   toggleTaskInList,
   validateTaskDetails,
 } from "./taskUtils.js";
+import {
+  DEFAULT_TIMER_SETTINGS,
+  loadAppState,
+  saveAppState,
+} from "./persistence.js";
 
-const COURSE_STORAGE_KEY = "studyforge:courses";
-const PROFILE_STORAGE_KEY = "studyforge:profile";
-const TIMER_SETTINGS_STORAGE_KEY = "studyforge:timer-settings";
 const COURSE_COLORS = [
   { name: "Violet", value: "#9b87f5" },
   { name: "Blue", value: "#5b9cf6" },
@@ -25,100 +27,11 @@ const COURSE_COLORS = [
   { name: "Coral", value: "#ef7e75" },
   { name: "Pink", value: "#e884c4" },
 ];
-const DEFAULT_TIMER_SETTINGS = {
-  focusMinutes: 25,
-  shortBreakMinutes: 5,
-  longBreakMinutes: 15,
-  focusSessionsPerCycle: 4,
-  autoStart: false,
-  soundEnabled: true,
-};
 const TIMER_MODES = [
   { id: "focus", label: "Focus", durationKey: "focusMinutes" },
   { id: "short-break", label: "Short Break", durationKey: "shortBreakMinutes" },
   { id: "long-break", label: "Long Break", durationKey: "longBreakMinutes" },
 ];
-
-function loadCourses() {
-  try {
-    const savedCourses = JSON.parse(localStorage.getItem(COURSE_STORAGE_KEY));
-
-    if (!Array.isArray(savedCourses)) {
-      return [];
-    }
-
-    return savedCourses.filter(
-      (course) =>
-        typeof course?.id === "string" &&
-        typeof course?.name === "string" &&
-        typeof course?.color === "string",
-    );
-  } catch {
-    return [];
-  }
-}
-
-function loadProfile() {
-  try {
-    const savedProfile = JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY));
-
-    return {
-      university:
-        typeof savedProfile?.university === "string" ? savedProfile.university : "",
-      fieldOfStudy:
-        typeof savedProfile?.fieldOfStudy === "string" ? savedProfile.fieldOfStudy : "",
-    };
-  } catch {
-    return { university: "", fieldOfStudy: "" };
-  }
-}
-
-function loadTimerSettings() {
-  try {
-    const savedSettings = JSON.parse(
-      localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY),
-    );
-    const isWholeNumberBetween = (value, minimum, maximum) =>
-      Number.isInteger(value) && value >= minimum && value <= maximum;
-
-    return {
-      focusMinutes: isWholeNumberBetween(savedSettings?.focusMinutes, 1, 180)
-        ? savedSettings.focusMinutes
-        : DEFAULT_TIMER_SETTINGS.focusMinutes,
-      shortBreakMinutes: isWholeNumberBetween(
-        savedSettings?.shortBreakMinutes,
-        1,
-        180,
-      )
-        ? savedSettings.shortBreakMinutes
-        : DEFAULT_TIMER_SETTINGS.shortBreakMinutes,
-      longBreakMinutes: isWholeNumberBetween(
-        savedSettings?.longBreakMinutes,
-        1,
-        180,
-      )
-        ? savedSettings.longBreakMinutes
-        : DEFAULT_TIMER_SETTINGS.longBreakMinutes,
-      focusSessionsPerCycle: isWholeNumberBetween(
-        savedSettings?.focusSessionsPerCycle,
-        1,
-        99,
-      )
-        ? savedSettings.focusSessionsPerCycle
-        : DEFAULT_TIMER_SETTINGS.focusSessionsPerCycle,
-      autoStart:
-        typeof savedSettings?.autoStart === "boolean"
-          ? savedSettings.autoStart
-          : DEFAULT_TIMER_SETTINGS.autoStart,
-      soundEnabled:
-        typeof savedSettings?.soundEnabled === "boolean"
-          ? savedSettings.soundEnabled
-          : DEFAULT_TIMER_SETTINGS.soundEnabled,
-    };
-  } catch {
-    return { ...DEFAULT_TIMER_SETTINGS };
-  }
-}
 
 function createCourseId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -609,8 +522,8 @@ function DashboardView({
         <div>
           <strong>Your information stays on this device</strong>
           <p>
-            StudyForge saves your profile and courses in this browser. Tasks and
-            session progress clear on reload until Milestone 8.
+            StudyForge saves your profile, courses, tasks, and cycle progress in
+            this browser.
           </p>
         </div>
       </aside>
@@ -1157,7 +1070,7 @@ function TasksView({
       )}
 
       <p className="memory-note">
-        Tasks are kept for this visit only and will clear when the page reloads.
+        Tasks and their Pomodoro progress are saved on this device.
       </p>
     </section>
   );
@@ -1549,18 +1462,23 @@ function TimerView({
 }
 
 export default function App() {
-  const [courses, setCourses] = useState(loadCourses);
-  const [profile, setProfile] = useState(loadProfile);
-  const [tasks, setTasks] = useState([]);
-  const [activeTaskId, setActiveTaskId] = useState(null);
-  const [activeView, setActiveView] = useState("timer");
+  const [initialState] = useState(() => loadAppState());
+  const [courses, setCourses] = useState(initialState.courses);
+  const [profile, setProfile] = useState(initialState.profile);
+  const [tasks, setTasks] = useState(initialState.tasks);
+  const [activeTaskId, setActiveTaskId] = useState(initialState.activeTaskId);
+  const [activeView, setActiveView] = useState(initialState.activeView);
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
-  const [timerSettings, setTimerSettings] = useState(loadTimerSettings);
+  const [timerSettings, setTimerSettings] = useState(
+    initialState.timerSettings,
+  );
   const [remainingSeconds, setRemainingSeconds] = useState(
     () => getTimerDurationSeconds(TIMER_MODES[0].id, timerSettings),
   );
   const [timerStatus, setTimerStatus] = useState("idle");
-  const [completedFocusSessions, setCompletedFocusSessions] = useState(0);
+  const [completedFocusSessions, setCompletedFocusSessions] = useState(
+    initialState.completedFocusSessions,
+  );
   const [completionMessage, setCompletionMessage] = useState("");
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
@@ -1571,35 +1489,28 @@ export default function App() {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const timerEndTimeRef = useRef(null);
   const completionHandledRef = useRef(false);
-  const activeTaskIdRef = useRef(null);
+  const activeTaskIdRef = useRef(initialState.activeTaskId);
   const audioContextRef = useRef(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(courses));
-    } catch {
-      // Keep the course manager usable if browser storage is unavailable.
-    }
-  }, [courses]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-    } catch {
-      // Keep the profile form usable if browser storage is unavailable.
-    }
-  }, [profile]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        TIMER_SETTINGS_STORAGE_KEY,
-        JSON.stringify(timerSettings),
-      );
-    } catch {
-      // Keep the timer usable if browser storage is unavailable.
-    }
-  }, [timerSettings]);
+    saveAppState({
+      profile,
+      courses,
+      tasks,
+      timerSettings,
+      completedFocusSessions,
+      activeTaskId,
+      activeView,
+    });
+  }, [
+    activeTaskId,
+    activeView,
+    completedFocusSessions,
+    courses,
+    profile,
+    tasks,
+    timerSettings,
+  ]);
 
   useEffect(() => {
     if (
@@ -2102,7 +2013,7 @@ export default function App() {
       <header className="site-header">
         <button
           className="brand"
-          onClick={() => setActiveView("timer")}
+          onClick={() => setActiveView("dashboard")}
           type="button"
         >
           <BrandMark />
@@ -2128,7 +2039,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–7</span>
+        <span className="milestone-badge">Milestones 1–8</span>
       </header>
 
       {activeView === "dashboard" && (
@@ -2195,7 +2106,7 @@ export default function App() {
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.7</span>
+        <span>StudyForge v0.8</span>
       </footer>
 
       {isFormOpen && (

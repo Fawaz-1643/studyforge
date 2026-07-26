@@ -2,7 +2,8 @@
 
 ## Current milestone
 
-Milestones 1-7 are complete. Milestone 8, unified local persistence, is next.
+Milestones 1-8 are complete. Milestone 9, session history and statistics, is
+next.
 
 ## Technical foundation
 
@@ -53,7 +54,7 @@ Milestones 1-7 are complete. Milestone 8, unified local persistence, is next.
 - In-app completion feedback, a layered bell chime, and a distinct start/resume
   chime
 - Timer settings persistence with validation and safe defaults
-- Timer as the default landing view
+- Timer was made the default landing view at this milestone
 
 ### Milestone 6 - Course-linked task manager
 
@@ -67,7 +68,7 @@ Milestones 1-7 are complete. Milestone 8, unified local persistence, is next.
 - Course names and colors shown on linked tasks
 - Empty states for missing courses, missing tasks, and filters with no matches
 - Course deletion protection while any linked tasks remain
-- Memory-only task data with no task `localStorage` persistence
+- Task data remained memory-only at this milestone
 
 ### Milestone 7 - Active-task session workflow
 
@@ -84,28 +85,57 @@ Milestones 1-7 are complete. Milestone 8, unified local persistence, is next.
 - Task estimates remain unchanged and reaching an estimate does not complete a
   task automatically
 - The dashboard shows current-task and overall task progress
-- Task progress and current-task selection remain memory-only
+- Task progress and current-task selection remained memory-only at this
+  milestone
+
+### Milestone 8 - Unified local persistence
+
+- One centralized, versioned save/load layer for all durable application state
+- Device-local persistence for profile, courses, tasks, task completion,
+  completed task Pomodoros, timer settings, current-cycle Focus progress, and
+  active-task selection
+- Migration of valid profile, course, and timer-setting data from the
+  Milestones 1-7 storage keys
+- Field-level validation and safe defaults for profile and timer settings
+- Individual validation of course and task records, including duplicate-record
+  rejection
+- Rejection of tasks whose linked course is missing
+- Restoration of an active-task selection only when the task exists and is not
+  completed
+- Restoration of current-cycle progress only when it is a whole number valid
+  for the restored cycle setting
+- Graceful fallback when browser storage is missing, malformed, outdated,
+  partially valid, or unavailable
+- Dashboard as the first-visit and invalid-data landing view, with the last
+  valid page restored after reload
+- StudyForge brand navigation returns to Dashboard as the application home
+- Existing active-task clearing, course deletion safeguards, and exactly-once
+  natural Focus completion behavior preserved
 
 ## Current persistence
 
-Stored in `localStorage`:
+Stored together in one versioned `localStorage` record:
 
 - Courses
 - Student profile
-- Timer durations
-- Focus sessions per cycle
-- Auto-start preference
-- Timer-sound preference
+- Tasks and their completion status
+- Completed Pomodoro counts for tasks
+- Timer durations and Focus sessions per cycle
+- Auto-start and timer-sound preferences
+- Completed Focus sessions in the current timer cycle
+- Active-task selection
+- Last open application page
 
 Kept in memory and reset on reload:
 
-- Current timer mode, status, and remaining time
-- Completed Focus sessions in the current cycle
-- All tasks, their completion status, and completed Pomodoro counts
-- Current active-task selection
+- Current timer mode and status
+- Active countdown target timestamp and remaining time
+- In-app timer completion feedback
 
-Milestone 8 will introduce unified persistence for tasks, cycle progress,
-active selections, and the rest of the core application state.
+When a usable unified record does not exist, StudyForge migrates valid profile,
+course, and timer-setting values from the Milestones 1-7 storage keys. Loaded
+records are validated before use, and storage access failures fall back to
+in-memory operation.
 
 ## Important scope decisions
 
@@ -128,12 +158,12 @@ active selections, and the rest of the core application state.
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after Milestone 7 on July 26, 2026
-- Build result: 30 modules transformed; production bundle completed successfully
-- Project version: 0.7.0
+- Latest verified status: passing after Milestone 8 on July 26, 2026
+- Build result: 31 modules transformed; production bundle completed successfully
+- Project version: 0.8.0
 
 ## Next milestone
 
-Milestone 8 will add unified local persistence for tasks, completed task
-Pomodoros, timer cycle progress, active selections, and the rest of the core
-application state, with safe fallbacks for missing or malformed saved data.
+Milestone 9 will add dated session history and useful study statistics,
+including today and weekly totals, a seven-day trend, and course-time
+breakdowns. It must not be pulled into Milestone 8.
