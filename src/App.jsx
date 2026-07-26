@@ -17,6 +17,10 @@ import {
   loadAppState,
   saveAppState,
 } from "./persistence.js";
+import {
+  createFocusSessionRecord,
+  getSessionStatistics,
+} from "./statisticsUtils.js";
 
 const COURSE_COLORS = [
   { name: "Violet", value: "#9b87f5" },
@@ -41,6 +45,10 @@ function createTaskId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
 
+function createSessionId() {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+}
+
 function getTimerMode(modeId) {
   return TIMER_MODES.find((mode) => mode.id === modeId) ?? TIMER_MODES[0];
 }
@@ -57,6 +65,21 @@ function formatTime(totalSeconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function formatStudyMinutes(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${minutes} min`;
+  }
+
+  if (minutes === 0) {
+    return `${hours} ${hours === 1 ? "hr" : "hrs"}`;
+  }
+
+  return `${hours} ${hours === 1 ? "hr" : "hrs"} ${minutes} min`;
+}
+
 function BrandMark() {
   return (
     <div className="brand-mark" aria-hidden="true">
@@ -64,6 +87,80 @@ function BrandMark() {
       <span />
       <span />
     </div>
+  );
+}
+
+function ClockIcon({ className = "" }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <path d="M6.5 1.5h3" />
+      <circle cx="8" cy="8.5" r="5.25" />
+      <path d="M8 5v3.5l2.45 2.15" />
+      <circle className="clock-icon-center" cx="8" cy="8.5" r="0.65" />
+    </svg>
+  );
+}
+
+function NavIcon({ id }) {
+  const sharedProps = {
+    "aria-hidden": true,
+    className: `nav-icon nav-icon--${id}`,
+    fill: "none",
+    viewBox: "0 0 16 16",
+  };
+
+  if (id === "dashboard") {
+    return (
+      <svg {...sharedProps}>
+        <rect height="5" rx="1.25" width="5" x="1.5" y="1.5" />
+        <rect height="5" rx="1.25" width="5" x="9.5" y="1.5" />
+        <rect height="5" rx="1.25" width="5" x="1.5" y="9.5" />
+        <rect height="5" rx="1.25" width="5" x="9.5" y="9.5" />
+      </svg>
+    );
+  }
+
+  if (id === "courses") {
+    return (
+      <svg {...sharedProps}>
+        <rect height="4.5" rx="1.25" width="13" x="1.5" y="2" />
+        <rect height="4.5" rx="1.25" width="13" x="1.5" y="9.5" />
+      </svg>
+    );
+  }
+
+  if (id === "tasks") {
+    return (
+      <svg {...sharedProps}>
+        <rect height="13" rx="2.25" width="13" x="1.5" y="1.5" />
+        <path d="m4.75 8.2 2.05 2.05 4.55-4.7" />
+      </svg>
+    );
+  }
+
+  if (id === "timer") {
+    return <ClockIcon className={sharedProps.className} />;
+  }
+
+  if (id === "history") {
+    return (
+      <svg {...sharedProps}>
+        <path d="M2 13.75h12" />
+        <path d="M3.5 11V7.75h2V11M7 11V3.5h2V11M10.5 11V6h2V11" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...sharedProps}>
+      <circle cx="8" cy="5" r="3" />
+      <path d="M2.75 14c.35-3.1 2.1-4.65 5.25-4.65S12.9 10.9 13.25 14Z" />
+    </svg>
   );
 }
 
@@ -522,11 +619,209 @@ function DashboardView({
         <div>
           <strong>Your information stays on this device</strong>
           <p>
-            StudyForge saves your profile, courses, tasks, and cycle progress in
-            this browser.
+            StudyForge saves your profile, courses, tasks, cycle progress, and
+            completed Focus history in this browser.
           </p>
         </div>
       </aside>
+    </section>
+  );
+}
+
+function HistoryView({ courses, sessionHistory }) {
+  const statistics = getSessionStatistics(sessionHistory, courses);
+  const orderedHistory = [...sessionHistory].sort(
+    (first, second) =>
+      Date.parse(second.completedAt) - Date.parse(first.completedAt),
+  );
+  const maximumTrendMinutes = Math.max(
+    1,
+    ...statistics.sevenDayTrend.map((day) => day.minutes),
+  );
+  const completedDateFormatter = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+  });
+  const shortDateFormatter = new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+
+  return (
+    <section className="page-content history-view" aria-labelledby="history-title">
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">
+            <span className="status-dot" />
+            Study history
+          </div>
+          <h1 id="history-title">Your focused work</h1>
+          <p className="page-copy">
+            A device-local record of naturally completed Focus sessions.
+          </p>
+        </div>
+      </div>
+
+      <div className="history-summary" aria-label="Focus session totals">
+        <article>
+          <span>Today</span>
+          <strong>{statistics.todaySessions}</strong>
+          <small>
+            {statistics.todaySessions === 1 ? "Focus session" : "Focus sessions"}
+            {" · "}
+            {formatStudyMinutes(statistics.todayMinutes)}
+          </small>
+        </article>
+        <article>
+          <span>Current week</span>
+          <strong>{statistics.weekSessions}</strong>
+          <small>
+            {statistics.weekSessions === 1 ? "Focus session" : "Focus sessions"}
+            {" · "}
+            {formatStudyMinutes(statistics.weekMinutes)}
+          </small>
+        </article>
+        <article>
+          <span>All recorded</span>
+          <strong>{statistics.totalSessions}</strong>
+          <small>{formatStudyMinutes(statistics.totalMinutes)} focused</small>
+        </article>
+      </div>
+
+      {sessionHistory.length === 0 ? (
+        <section className="history-empty-state" aria-labelledby="history-empty-title">
+          <div className="history-empty-icon" aria-hidden="true">
+            <ClockIcon className="history-empty-clock" />
+          </div>
+          <p className="section-kicker">Nothing recorded yet</p>
+          <h2 id="history-empty-title">Complete a Focus session to begin</h2>
+          <p>
+            Pauses, resets, breaks, settings changes, and cancelled sessions will
+            never appear here.
+          </p>
+        </section>
+      ) : (
+        <>
+          <div className="history-insights">
+            <section className="history-panel" aria-labelledby="trend-title">
+              <div className="history-panel-heading">
+                <div>
+                  <p className="section-kicker">Last seven days</p>
+                  <h2 id="trend-title">Study trend</h2>
+                </div>
+                <span>{formatStudyMinutes(
+                  statistics.sevenDayTrend.reduce(
+                    (total, day) => total + day.minutes,
+                    0,
+                  ),
+                )}</span>
+              </div>
+              <div className="study-trend">
+                {statistics.sevenDayTrend.map((day) => (
+                  <div className="trend-day" key={day.key}>
+                    <div
+                      aria-label={`${shortDateFormatter.format(day.date)}: ${
+                        day.sessions
+                      } ${day.sessions === 1 ? "session" : "sessions"}, ${formatStudyMinutes(
+                        day.minutes,
+                      )}`}
+                      className="trend-bar-track"
+                      role="img"
+                    >
+                      <span
+                        className="trend-bar"
+                        style={{
+                          "--trend-height": `${(day.minutes / maximumTrendMinutes) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{day.sessions}</strong>
+                    <small>{weekdayFormatter.format(day.date)}</small>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="history-panel" aria-labelledby="breakdown-title">
+              <div className="history-panel-heading">
+                <div>
+                  <p className="section-kicker">All recorded time</p>
+                  <h2 id="breakdown-title">Course breakdown</h2>
+                </div>
+              </div>
+              <div className="course-time-list">
+                {statistics.courseTimeBreakdown.map((courseTotal) => (
+                  <div
+                    className="course-time-row"
+                    key={courseTotal.courseId ?? "unassigned"}
+                    style={{ "--course-color": courseTotal.color }}
+                  >
+                    <div className="course-time-label">
+                      <span aria-hidden="true" />
+                      <div>
+                        <strong>{courseTotal.name}</strong>
+                        <small>
+                          {courseTotal.sessions}{" "}
+                          {courseTotal.sessions === 1 ? "session" : "sessions"}
+                        </small>
+                      </div>
+                    </div>
+                    <div className="course-time-value">
+                      <strong>{formatStudyMinutes(courseTotal.minutes)}</strong>
+                      <span>
+                        {Math.round(
+                          (courseTotal.minutes / statistics.totalMinutes) * 100,
+                        )}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <section className="session-history" aria-labelledby="session-history-title">
+            <div className="history-panel-heading">
+              <div>
+                <p className="section-kicker">Completed Focus sessions</p>
+                <h2 id="session-history-title">Session history</h2>
+              </div>
+              <span>
+                {statistics.totalSessions}{" "}
+                {statistics.totalSessions === 1 ? "record" : "records"}
+              </span>
+            </div>
+            <div className="session-list">
+              {orderedHistory.map((session) => (
+                <article className="session-record" key={session.id}>
+                  <div className="session-record-mark" aria-hidden="true">
+                    ✓
+                  </div>
+                  <div className="session-record-details">
+                    <strong>{session.taskTitle ?? "Focus session"}</strong>
+                    <span>
+                      {session.courseName ??
+                        (session.taskTitle
+                          ? "No course association"
+                          : "No task or course selected")}
+                    </span>
+                  </div>
+                  <div className="session-record-meta">
+                    <strong>{formatStudyMinutes(session.durationMinutes)}</strong>
+                    <time dateTime={session.completedAt}>
+                      {completedDateFormatter.format(new Date(session.completedAt))}
+                    </time>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </section>
   );
 }
@@ -1467,6 +1762,9 @@ export default function App() {
   const [profile, setProfile] = useState(initialState.profile);
   const [tasks, setTasks] = useState(initialState.tasks);
   const [activeTaskId, setActiveTaskId] = useState(initialState.activeTaskId);
+  const [sessionHistory, setSessionHistory] = useState(
+    initialState.sessionHistory,
+  );
   const [activeView, setActiveView] = useState(initialState.activeView);
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
   const [timerSettings, setTimerSettings] = useState(
@@ -1490,7 +1788,12 @@ export default function App() {
   const timerEndTimeRef = useRef(null);
   const completionHandledRef = useRef(false);
   const activeTaskIdRef = useRef(initialState.activeTaskId);
+  const coursesRef = useRef(initialState.courses);
+  const tasksRef = useRef(initialState.tasks);
   const audioContextRef = useRef(null);
+
+  coursesRef.current = courses;
+  tasksRef.current = tasks;
 
   useEffect(() => {
     saveAppState({
@@ -1500,6 +1803,7 @@ export default function App() {
       timerSettings,
       completedFocusSessions,
       activeTaskId,
+      sessionHistory,
       activeView,
     });
   }, [
@@ -1508,6 +1812,7 @@ export default function App() {
     completedFocusSessions,
     courses,
     profile,
+    sessionHistory,
     tasks,
     timerSettings,
   ]);
@@ -1864,12 +2169,31 @@ export default function App() {
 
     if (timerModeId === "focus") {
       const selectedTaskId = activeTaskIdRef.current;
+      const selectedTask =
+        tasksRef.current.find(
+          (task) => task.id === selectedTaskId && !task.isCompleted,
+        ) ?? null;
+      const selectedCourse =
+        coursesRef.current.find(
+          (course) => course.id === selectedTask?.courseId,
+        ) ?? null;
 
       if (selectedTaskId) {
         setTasks((currentTasks) =>
           incrementTaskPomodoroInList(currentTasks, selectedTaskId),
         );
       }
+
+      setSessionHistory((currentHistory) => [
+        ...currentHistory,
+        createFocusSessionRecord({
+          completedAt,
+          course: selectedCourse,
+          createId: createSessionId,
+          durationMinutes: timerSettings.focusMinutes,
+          task: selectedTask,
+        }),
+      ]);
 
       const nextFocusCount = completedFocusSessions + 1;
       const cycleIsComplete =
@@ -2025,6 +2349,7 @@ export default function App() {
             { id: "courses", label: "Courses" },
             { id: "tasks", label: "Tasks" },
             { id: "timer", label: "Timer" },
+            { id: "history", label: "History" },
             { id: "profile", label: "Profile" },
           ].map((item) => (
             <button
@@ -2034,12 +2359,12 @@ export default function App() {
               onClick={() => setActiveView(item.id)}
               type="button"
             >
-              <span className={`nav-icon nav-icon--${item.id}`} aria-hidden="true" />
+              <NavIcon id={item.id} />
               {item.label}
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–8</span>
+        <span className="milestone-badge">Milestones 1–9</span>
       </header>
 
       {activeView === "dashboard" && (
@@ -2078,6 +2403,9 @@ export default function App() {
       {activeView === "profile" && (
         <ProfileView profile={profile} onSave={setProfile} />
       )}
+      {activeView === "history" && (
+        <HistoryView courses={courses} sessionHistory={sessionHistory} />
+      )}
       {activeView === "timer" && (
         <TimerView
           activeTask={activeTask}
@@ -2106,7 +2434,7 @@ export default function App() {
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.8</span>
+        <span>StudyForge v0.9</span>
       </footer>
 
       {isFormOpen && (

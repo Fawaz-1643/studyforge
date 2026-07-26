@@ -2,8 +2,7 @@
 
 ## Current milestone
 
-Milestones 1-8 are complete. Milestone 9, session history and statistics, is
-next.
+Milestones 1-9 are complete. Milestone 10, restrained gamification, is next.
 
 ## Technical foundation
 
@@ -112,6 +111,30 @@ next.
 - Existing active-task clearing, course deletion safeguards, and exactly-once
   natural Focus completion behavior preserved
 
+### Milestone 9 - Session history and statistics
+
+- One dated device-local history record for every naturally completed Focus
+  session
+- One history record and at most one selected-task Pomodoro increment behind the
+  same exactly-once natural-completion guard
+- Focus duration plus optional task and course snapshots preserved in each
+  record
+- Coherent history entries for Focus sessions completed without a selected task,
+  with no invented course association
+- Break completions, pauses, resets, settings changes, manual mode switches, and
+  cancellations do not themselves create history or task progress
+- Today and Monday-based current-week completed Focus-session totals
+- A local-date seven-day trend showing completed sessions and focused minutes
+- An all-time course-time breakdown, including an explicit unassigned category
+  for sessions without a course
+- A dated session list and clear pre-history empty state
+- Dedicated History navigation with restoration after reload
+- Migration of the complete Milestone 8 unified state into storage version 2
+- Individual session-record validation, duplicate-ID rejection, safe optional
+  snapshot repair, and graceful handling of malformed or unavailable storage
+- Existing dashboard landing, 2x2 overview, brand-home navigation, task rules,
+  course deletion safeguards, and memory-only countdown behavior preserved
+
 ## Current persistence
 
 Stored together in one versioned `localStorage` record:
@@ -124,6 +147,7 @@ Stored together in one versioned `localStorage` record:
 - Auto-start and timer-sound preferences
 - Completed Focus sessions in the current timer cycle
 - Active-task selection
+- Dated completed Focus-session history
 - Last open application page
 
 Kept in memory and reset on reload:
@@ -132,10 +156,11 @@ Kept in memory and reset on reload:
 - Active countdown target timestamp and remaining time
 - In-app timer completion feedback
 
-When a usable unified record does not exist, StudyForge migrates valid profile,
+StudyForge migrates valid Milestone 8 unified records into storage version 2.
+When a usable unified record does not exist, it still migrates valid profile,
 course, and timer-setting values from the Milestones 1-7 storage keys. Loaded
-records are validated before use, and storage access failures fall back to
-in-memory operation.
+records and individual history entries are validated before use, and storage
+access failures fall back to in-memory operation.
 
 ## Important scope decisions
 
@@ -152,18 +177,21 @@ in-memory operation.
 - Reaching a task estimate does not automatically complete the task.
 - Every task must reference an existing course, and a course with linked tasks
   cannot be deleted.
-- No session history, statistics, XP, streaks, levels, or achievements have
-  been added.
+- Historical task and course labels are snapshots; later edits or deletion do
+  not rewrite already completed sessions.
+- No XP, streaks, levels, achievements, coins, rewards, goals, recommendations,
+  heatmaps, or advanced analytics have been added.
 
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after Milestone 8 on July 26, 2026
-- Build result: 31 modules transformed; production bundle completed successfully
-- Project version: 0.8.0
+- Latest verified status: passing after Milestone 9 on July 26, 2026
+- Build result: 32 modules transformed; production bundle completed successfully
+- Project version: 0.9.0
 
 ## Next milestone
 
-Milestone 9 will add dated session history and useful study statistics,
-including today and weekly totals, a seven-day trend, and course-time
-breakdowns. It must not be pulled into Milestone 8.
+Milestone 10 will add restrained gamification: XP for valid completed Focus
+sessions, level progress, a simple streak, a few earned achievements, and brief
+reward feedback. It must not reward cancelled sessions or introduce coins,
+shops, avatars, or fantasy-style systems.

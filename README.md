@@ -1,15 +1,16 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 8: unified local
-persistence**.
+a time. This repository currently contains **Milestone 9: session history and
+statistics**.
 
-Session history, statistics, and the XP system belong to later milestones.
+XP, levels, streaks, achievements, and other rewards belong to later
+milestones.
 
-## What Milestones 1–8 include
+## What Milestones 1–9 include
 
-- Navigate between a dashboard, course library, task manager, timer, and student
-  profile
+- Navigate between a dashboard, course library, task manager, timer, study
+  history, and student profile
 - Open Dashboard on a first visit and restore the last valid page after reload
 - See a simple dashboard overview of saved profile and course information
 - Add an optional university and field of study to a student profile
@@ -46,7 +47,12 @@ Session history, statistics, and the XP system belong to later milestones.
   Pomodoros beside the timer
 - Increment the current task exactly once when a Focus session naturally
   finishes
-- Keep breaks and manual timer actions from changing task progress
+- Record exactly one dated history entry for each naturally completed Focus
+  session
+- Record Focus sessions without a selected task without inventing a course
+  association
+- Ensure break completions, pauses, resets, settings changes, manual mode
+  switches, and cancellations do not themselves create history or task progress
 - Clear the current-task selection when that task is completed or deleted
 - See active-task and overall task progress on the dashboard
 - Restore tasks, task completion, completed task Pomodoros, current-cycle
@@ -56,14 +62,23 @@ Session history, statistics, and the XP system belong to later milestones.
   format
 - Reject or safely repair malformed stored records without preventing the app
   from opening
+- Migrate the complete Milestone 8 unified state into the Milestone 9 storage
+  version
+- Validate history records individually, preserving usable records while
+  discarding malformed records and unsafe optional associations
 - Keep only tasks linked to existing courses and only restore a current task
   when it exists and remains active
+- See today's and the current week's completed Focus-session totals
+- See a seven-day Focus trend, all-time course-time breakdown, and dated session
+  list
+- See clear history and statistics empty states before any Focus session has
+  completed
 - A responsive dark design that works on phones and larger screens
 
 The profile, courses, tasks, task progress, timer settings, completed Focus
-sessions in the current cycle, and current-task selection are stored only on the
-device and browser where they were created. Clearing that browser's site data
-will also clear them.
+sessions in the current cycle, current-task selection, and completed Focus
+history are stored only on the device and browser where they were created.
+Clearing that browser's site data will also clear them.
 
 The last open page is saved too. New visitors and invalid saved page values open
 Dashboard, and the StudyForge logo returns there as the application home.
@@ -72,15 +87,17 @@ The active or paused countdown remains deliberately memory-only. Reloading does
 not reconstruct its mode, status, target timestamp, or remaining seconds; the
 timer returns to a fresh Focus session while retaining valid cycle progress.
 
-StudyForge automatically imports valid profile, course, and timer-setting data
-from the Milestones 1–7 storage keys when no usable unified state exists.
-Unavailable, malformed, outdated, or partially invalid browser data falls back
-safely, and browser-storage failures do not prevent in-memory use.
+StudyForge automatically migrates a valid Milestone 8 unified record and still
+imports valid profile, course, and timer-setting data from the Milestones 1–7
+storage keys when no usable unified state exists. Unavailable, malformed,
+outdated, or partially invalid browser data falls back safely, and
+browser-storage failures do not prevent in-memory use.
 
 Task estimates remain planning values. A naturally completed Focus session
-increments the selected task's completed-Pomodoro count without changing its
-estimate or automatically completing the task. Breaks, resets, pauses, settings
-changes, and manual mode switches do not increment task progress.
+increments the selected task's completed-Pomodoro count and creates one history
+record without changing its estimate or automatically completing the task.
+Break completions, resets, pauses, settings changes, manual mode switches, and
+cancellations do not themselves increment task progress or create history.
 
 ## Run the project locally
 
@@ -121,6 +138,7 @@ studyforge/
 │   ├── App.jsx       # The visible React screen
 │   ├── main.jsx      # Connects React to the web page
 │   ├── persistence.js # Unified storage, validation, and legacy migration
+│   ├── statisticsUtils.js # Session creation and study-statistic calculations
 │   ├── taskUtils.js  # Task validation, filtering, and list rules
 │   └── styles.css    # The complete visual theme
 ├── .gitignore        # Files Git should not track

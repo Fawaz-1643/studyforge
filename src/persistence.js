@@ -2,7 +2,8 @@ const APP_STORAGE_KEY = "studyforge:app-state";
 const LEGACY_COURSE_STORAGE_KEY = "studyforge:courses";
 const LEGACY_PROFILE_STORAGE_KEY = "studyforge:profile";
 const LEGACY_TIMER_SETTINGS_STORAGE_KEY = "studyforge:timer-settings";
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
+const MILESTONE_8_STORAGE_VERSION = 1;
 
 const PROFILE_FIELD_MAX_LENGTH = 80;
 const COURSE_NAME_MAX_LENGTH = 60;
@@ -15,6 +16,7 @@ const VALID_ACTIVE_VIEWS = new Set([
   "courses",
   "tasks",
   "timer",
+  "history",
   "profile",
 ]);
 
@@ -191,6 +193,69 @@ function normalizeTasks(value, courses) {
   });
 }
 
+function normalizeSessionHistory(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const sessionIds = new Set();
+
+  return value.flatMap((session) => {
+    if (!isRecord(session)) {
+      return [];
+    }
+
+    const id = normalizeId(session.id);
+    const completedAtTimestamp =
+      typeof session.completedAt === "string"
+        ? Date.parse(session.completedAt)
+        : Number.NaN;
+    const durationMinutes = session.durationMinutes;
+
+    if (
+      !id ||
+      sessionIds.has(id) ||
+      !Number.isFinite(completedAtTimestamp) ||
+      !isWholeNumberBetween(durationMinutes, 1, 180)
+    ) {
+      return [];
+    }
+
+    const normalizedSession = {
+      id,
+      completedAt: new Date(completedAtTimestamp).toISOString(),
+      durationMinutes,
+    };
+    const taskId = normalizeId(session.taskId);
+    const taskTitle = normalizeText(session.taskTitle, TASK_TITLE_MAX_LENGTH);
+
+    if (taskId && taskTitle) {
+      normalizedSession.taskId = taskId;
+      normalizedSession.taskTitle = taskTitle;
+
+      const courseId = normalizeId(session.courseId);
+      const courseName = normalizeText(session.courseName, COURSE_NAME_MAX_LENGTH);
+      const courseColor =
+        typeof session.courseColor === "string"
+          ? session.courseColor.trim()
+          : "";
+
+      if (
+        courseId &&
+        courseName &&
+        /^#[0-9a-f]{6}$/i.test(courseColor)
+      ) {
+        normalizedSession.courseId = courseId;
+        normalizedSession.courseName = courseName;
+        normalizedSession.courseColor = courseColor;
+      }
+    }
+
+    sessionIds.add(id);
+    return [normalizedSession];
+  });
+}
+
 function chooseCurrentValue(currentState, key, legacyValue) {
   return Object.hasOwn(currentState, key) ? currentState[key] : legacyValue;
 }
@@ -203,7 +268,9 @@ export function loadAppState(storage) {
   const selectedStorage = storage ?? getBrowserStorage();
   const storedState = readStoredJson(selectedStorage, APP_STORAGE_KEY);
   const currentState =
-    isRecord(storedState) && storedState.version === STORAGE_VERSION
+    isRecord(storedState) &&
+    (storedState.version === STORAGE_VERSION ||
+      storedState.version === MILESTONE_8_STORAGE_VERSION)
       ? storedState
       : {};
 
@@ -260,6 +327,10 @@ export function loadAppState(storage) {
   )
     ? savedActiveTaskId
     : null;
+  const sessionHistory =
+    currentState.version === STORAGE_VERSION
+      ? normalizeSessionHistory(currentState.sessionHistory)
+      : [];
   const activeView = normalizeActiveView(currentState.activeView);
 
   return {
@@ -269,6 +340,7 @@ export function loadAppState(storage) {
     timerSettings,
     completedFocusSessions,
     activeTaskId,
+    sessionHistory,
     activeView,
   };
 }
@@ -291,6 +363,7 @@ export function saveAppState(state, storage) {
         timerSettings: state.timerSettings,
         completedFocusSessions: state.completedFocusSessions,
         activeTaskId: state.activeTaskId,
+        sessionHistory: state.sessionHistory,
         activeView: normalizeActiveView(state.activeView),
       }),
     );
