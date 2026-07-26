@@ -1,19 +1,20 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 1: the project
-foundation**.
+a time. This repository currently contains **Milestone 2: course management**.
 
-No planner features have been implemented yet. The timer, course-linked tasks,
-local persistence, statistics, and XP system belong to later milestones.
+Tasks, the timer, statistics, and the XP system belong to later milestones.
 
-## What Milestone 1 includes
+## What Milestone 2 includes
 
-- A React application powered by Vite
-- A polished, responsive dark-mode welcome screen
-- A production build that works with Vercel
-- A `.gitignore` that keeps generated and personal files out of Git
-- A small, beginner-friendly folder structure
+- Add courses with a name and one of seven colors
+- Edit an existing course's name or color
+- Delete a course after a confirmation step
+- Save the course list in the browser's `localStorage`
+- A responsive dark design that works on phones and larger screens
+
+Courses are stored only on the device and browser where they were created.
+Clearing that browser's site data will also clear the courses.
 
 ## Run the project locally
 
