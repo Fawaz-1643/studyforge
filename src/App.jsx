@@ -826,7 +826,7 @@ function TimerView({
 export default function App() {
   const [courses, setCourses] = useState(loadCourses);
   const [profile, setProfile] = useState(loadProfile);
-  const [activeView, setActiveView] = useState("dashboard");
+  const [activeView, setActiveView] = useState("timer");
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
   const [remainingSeconds, setRemainingSeconds] = useState(
     DEFAULT_TIMER_SETTINGS.focusMinutes * 60,
@@ -987,12 +987,12 @@ export default function App() {
       oscillator.frequency.setValueAtTime(660, startTime);
       oscillator.frequency.setValueAtTime(880, startTime + 0.09);
       gain.gain.setValueAtTime(0.0001, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.24);
+      gain.gain.exponentialRampToValueAtTime(0.24, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.98);
       oscillator.connect(gain);
       gain.connect(audioContext.destination);
       oscillator.start(startTime);
-      oscillator.stop(startTime + 0.25);
+      oscillator.stop(startTime + 1);
     } catch {
       // The visible completion message is the fallback when audio cannot play.
     }
@@ -1144,7 +1144,7 @@ export default function App() {
       <header className="site-header">
         <button
           className="brand"
-          onClick={() => setActiveView("dashboard")}
+          onClick={() => setActiveView("timer")}
           type="button"
         >
           <BrandMark />
