@@ -2,14 +2,15 @@
 
 ## Current milestone
 
-Milestones 1-5 are complete. Milestone 6, the course-linked task manager, is
+Milestones 1-6 are complete. Milestone 7, the active-task session workflow, is
 next.
 
 ## Technical foundation
 
 - React 19 with Vite and JavaScript
 - Responsive dark interface with a violet primary accent
-- A single-page application with Dashboard, Courses, Timer, and Profile views
+- A single-page application with Dashboard, Courses, Tasks, Timer, and Profile
+  views
 - Browser `localStorage` for approved device-local persistence
 - No login, backend, database, paid API, social feature, or university
   integration
@@ -55,6 +56,20 @@ next.
 - Timer settings persistence with validation and safe defaults
 - Timer as the default landing view
 
+### Milestone 6 - Course-linked task manager
+
+- Dedicated Tasks navigation and task-management view
+- Create and edit tasks with a required trimmed title, an existing course, and
+  a whole-number Pomodoro estimate
+- Complete, reopen, and delete tasks with clear status presentation and delete
+  confirmation
+- Combined status and course filters
+- Total, active, and completed task counts
+- Course names and colors shown on linked tasks
+- Empty states for missing courses, missing tasks, and filters with no matches
+- Course deletion protection while any linked tasks remain
+- Memory-only task data with no task `localStorage` persistence
+
 ## Current persistence
 
 Stored in `localStorage`:
@@ -70,10 +85,10 @@ Kept in memory and reset on reload:
 
 - Current timer mode, status, and remaining time
 - Completed Focus sessions in the current cycle
+- All tasks and their completion status
 
-Task data does not exist yet. Milestone 8 will introduce unified persistence for
-tasks, cycle progress, active selections, and the rest of the core application
-state.
+Milestone 8 will introduce unified persistence for tasks, cycle progress,
+active selections, and the rest of the core application state.
 
 ## Important scope decisions
 
@@ -82,18 +97,23 @@ state.
   sessions.
 - Timer completion uses in-app feedback and sound only; it does not use browser
   or operating-system notifications.
-- Tasks will not affect the timer until Milestone 7.
+- Tasks do not affect the timer in Milestone 6.
+- Pomodoro estimates are planning values and do not change when timer sessions
+  finish.
+- Every task must reference an existing course, and a course with linked tasks
+  cannot be deleted.
 - No session history, statistics, XP, streaks, levels, or achievements have
   been added.
 
 ## Verification
 
 - Latest production command: `npm run build`
-- Latest verified status: passing after Milestone 5
-- Project version: 0.5.0
+- Latest verified status: passing after Milestone 6
+- Project version: 0.6.0
 
 ## Next milestone
 
-Milestone 6 will add a course-linked task manager with create, edit, complete,
-reopen, delete, filter, and Pomodoro-estimate features. It must not connect
-tasks to timer completions or add task persistence early.
+Milestone 7 will connect a selected active task to completed Focus sessions,
+show that task near the timer, and add task progress to the dashboard. It must
+increment progress exactly once per completed Focus session without changing
+the task's estimate.

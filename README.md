@@ -1,15 +1,16 @@
 # StudyForge
 
 StudyForge is a dark-mode university study planner built one small milestone at
-a time. This repository currently contains **Milestone 5: timer settings,
-automatic session cycles, and completion feedback**.
+a time. This repository currently contains **Milestone 6: a course-linked task
+manager**.
 
-Tasks, statistics, unified persistence, and the XP system belong to later
-milestones.
+Task-and-timer connections, statistics, unified persistence, and the XP system
+belong to later milestones.
 
-## What Milestones 1–5 include
+## What Milestones 1–6 include
 
-- Navigate between a dashboard, course library, timer, and student profile
+- Navigate between a dashboard, course library, task manager, timer, and student
+  profile
 - See a simple dashboard overview of saved profile and course information
 - Add an optional university and field of study to a student profile
 - Edit the profile and show saved details above the course library
@@ -30,12 +31,29 @@ milestones.
   and completion sounds
 - Save timer durations, cycle length, auto-start, and sound preferences in
   `localStorage`
+- Create a task with a required title, an existing course, and an estimated
+  number of Pomodoro sessions
+- Edit a task's title, linked course, and Pomodoro estimate
+- Mark active tasks as completed and reopen completed tasks
+- Delete a task after a confirmation step
+- Filter tasks by status and course at the same time
+- See total, active, and completed task counts
+- Prevent deletion of a course while any active or completed task still links
+  to it
+- See clear empty states when courses, tasks, or filter matches are missing
 - A responsive dark design that works on phones and larger screens
 
 The profile, courses, and timer settings are stored only on the device and
 browser where they were created. Clearing that browser's site data will also
 clear them. The active timer and completed Focus count in the current cycle are
 kept only in memory and reset when the page is reloaded.
+
+Tasks are also deliberately kept in memory only during Milestone 6. Reloading
+the page clears the task list. Task persistence will be added as part of the
+unified local persistence work in Milestone 8.
+
+Task estimates are planning values. Timer completions do not change them, and
+tasks are not connected to timer sessions until Milestone 7.
 
 ## Run the project locally
 
@@ -75,6 +93,7 @@ studyforge/
 ├── src/
 │   ├── App.jsx       # The visible React screen
 │   ├── main.jsx      # Connects React to the web page
+│   ├── taskUtils.js  # Task validation, filtering, and list rules
 │   └── styles.css    # The complete visual theme
 ├── .gitignore        # Files Git should not track
 ├── index.html        # The browser's starting document

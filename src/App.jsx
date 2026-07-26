@@ -1,4 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  countTasksForCourse,
+  deleteTaskFromList,
+  filterTasks,
+  getTaskCounts,
+  saveTaskInList,
+  TASK_ESTIMATE_MAX,
+  TASK_ESTIMATE_MIN,
+  TASK_TITLE_MAX_LENGTH,
+  toggleTaskInList,
+  validateTaskDetails,
+} from "./taskUtils.js";
 
 const COURSE_STORAGE_KEY = "studyforge:courses";
 const PROFILE_STORAGE_KEY = "studyforge:profile";
@@ -108,6 +120,10 @@ function loadTimerSettings() {
 }
 
 function createCourseId() {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+}
+
+function createTaskId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
 
@@ -572,6 +588,454 @@ function CoursesView({ courses, onAdd, onDelete, onEdit }) {
   );
 }
 
+function TaskForm({ courses, onCancel, onSave, task }) {
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [courseId, setCourseId] = useState(task?.courseId ?? courses[0]?.id ?? "");
+  const [estimate, setEstimate] = useState(
+    String(task?.estimatedPomodoros ?? 1),
+  );
+  const [formError, setFormError] = useState("");
+  const titleInputRef = useRef(null);
+
+  useEffect(() => {
+    titleInputRef.current?.focus();
+  }, []);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const validation = validateTaskDetails(
+      {
+        title,
+        courseId,
+        estimatedPomodoros: estimate,
+      },
+      courses,
+    );
+
+    if (validation.error) {
+      setFormError(validation.error);
+
+      if (
+        !title.trim() ||
+        title.trim().length > TASK_TITLE_MAX_LENGTH
+      ) {
+        titleInputRef.current?.focus();
+      }
+
+      return;
+    }
+
+    setFormError("");
+    onSave(validation.taskDetails);
+  }
+
+  return (
+    <div className="modal-backdrop" onMouseDown={onCancel}>
+      <section
+        aria-labelledby="task-form-title"
+        aria-modal="true"
+        className="modal"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <div className="modal-heading">
+          <div>
+            <p className="section-kicker">{task ? "Update task" : "New task"}</p>
+            <h2 id="task-form-title">{task ? "Edit task" : "Add a task"}</h2>
+          </div>
+          <button
+            aria-label="Close"
+            className="icon-button"
+            onClick={onCancel}
+            type="button"
+          >
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <label className="field-label" htmlFor="task-title">
+            Task title
+          </label>
+          <input
+            aria-describedby={formError ? "task-form-error" : "task-title-help"}
+            autoComplete="off"
+            className="text-input"
+            id="task-title"
+            maxLength={TASK_TITLE_MAX_LENGTH}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="e.g. Review lecture notes"
+            ref={titleInputRef}
+            value={title}
+          />
+          <p className="field-help" id="task-title-help">
+            Required · Up to {TASK_TITLE_MAX_LENGTH} characters
+          </p>
+
+          <div className="task-form-fields">
+            <label>
+              <span className="field-label">Course</span>
+              <select
+                className="text-input select-input"
+                onChange={(event) => setCourseId(event.target.value)}
+                value={courseId}
+              >
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="field-label">Estimated Pomodoros</span>
+              <input
+                aria-describedby={formError ? "task-form-error" : "task-estimate-help"}
+                className="text-input"
+                inputMode="numeric"
+                max={TASK_ESTIMATE_MAX}
+                min={TASK_ESTIMATE_MIN}
+                onChange={(event) => setEstimate(event.target.value)}
+                step="1"
+                type="number"
+                value={estimate}
+              />
+              <span className="field-help" id="task-estimate-help">
+                Estimated Focus sessions only
+              </span>
+            </label>
+          </div>
+
+          <p
+            className={`form-message task-form-message${
+              formError ? " form-message--error" : ""
+            }`}
+            id="task-form-error"
+            role={formError ? "alert" : undefined}
+          >
+            {formError ||
+              "This estimate stays unchanged when timer sessions finish."}
+          </p>
+
+          <div className="modal-actions">
+            <button className="button button--secondary" onClick={onCancel} type="button">
+              Cancel
+            </button>
+            <button className="button button--primary" type="submit">
+              {task ? "Save changes" : "Add task"}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function TaskDeleteConfirmation({ onCancel, onConfirm, task }) {
+  return (
+    <div className="modal-backdrop" onMouseDown={onCancel}>
+      <section
+        aria-labelledby="task-delete-title"
+        aria-modal="true"
+        className="modal modal--small"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="alertdialog"
+      >
+        <div className="delete-symbol" aria-hidden="true">
+          !
+        </div>
+        <h2 id="task-delete-title">Delete this task?</h2>
+        <p className="modal-copy">
+          “{task.title}” will be removed from this task list. This action can’t be
+          undone.
+        </p>
+        <div className="modal-actions">
+          <button className="button button--secondary" onClick={onCancel} type="button">
+            Keep task
+          </button>
+          <button className="button button--danger" onClick={onConfirm} type="button">
+            Delete task
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CourseDeleteBlocked({ course, linkedTaskCount, onClose, onViewTasks }) {
+  return (
+    <div className="modal-backdrop" onMouseDown={onClose}>
+      <section
+        aria-labelledby="course-delete-blocked-title"
+        aria-modal="true"
+        className="modal modal--small"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="alertdialog"
+      >
+        <div className="blocked-symbol" aria-hidden="true">
+          ↗
+        </div>
+        <h2 id="course-delete-blocked-title">This course is still in use</h2>
+        <p className="modal-copy">
+          {course.name} has {linkedTaskCount} linked{" "}
+          {linkedTaskCount === 1 ? "task" : "tasks"}. Move those tasks to another
+          course or delete them before deleting this course.
+        </p>
+        <div className="modal-actions">
+          <button className="button button--secondary" onClick={onClose} type="button">
+            Keep course
+          </button>
+          <button className="button button--primary" onClick={onViewTasks} type="button">
+            View tasks
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TasksView({
+  courses,
+  onAdd,
+  onDelete,
+  onEdit,
+  onNavigate,
+  onToggleComplete,
+  tasks,
+}) {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const taskCounts = getTaskCounts(tasks);
+  const filteredTasks = filterTasks(tasks, statusFilter, courseFilter);
+  const filtersAreActive = statusFilter !== "all" || courseFilter !== "all";
+
+  function clearFilters() {
+    setStatusFilter("all");
+    setCourseFilter("all");
+  }
+
+  if (courses.length === 0) {
+    return (
+      <section className="page-content tasks-view" aria-labelledby="tasks-title">
+        <div className="page-heading">
+          <div>
+            <div className="eyebrow">
+              <span className="status-dot" />
+              Task manager
+            </div>
+            <h1 id="tasks-title">Your tasks</h1>
+            <p className="page-copy">
+              Plan focused work and keep every task connected to a course.
+            </p>
+          </div>
+        </div>
+        <section className="empty-state tasks-empty-state">
+          <div className="empty-task-mark" aria-hidden="true">
+            ✓
+          </div>
+          <h2>Create a course first</h2>
+          <p>
+            Every StudyForge task needs a course. Add a course, then return here
+            to plan your first task.
+          </p>
+          <button
+            className="button button--primary"
+            onClick={() => onNavigate("courses")}
+            type="button"
+          >
+            Go to Courses
+          </button>
+        </section>
+      </section>
+    );
+  }
+
+  return (
+    <section className="page-content tasks-view" aria-labelledby="tasks-title">
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">
+            <span className="status-dot" />
+            Task manager
+          </div>
+          <h1 id="tasks-title">Your tasks</h1>
+          <p className="page-copy">
+            Plan focused work, estimate the effort, and keep each task tied to a
+            course.
+          </p>
+        </div>
+        <button className="button button--primary add-button" onClick={onAdd}>
+          <PlusIcon />
+          Add task
+        </button>
+      </div>
+
+      <div className="task-counts" aria-label="Task totals">
+        <article>
+          <span>Total</span>
+          <strong>{taskCounts.total}</strong>
+        </article>
+        <article>
+          <span>Active</span>
+          <strong>{taskCounts.active}</strong>
+        </article>
+        <article>
+          <span>Completed</span>
+          <strong>{taskCounts.completed}</strong>
+        </article>
+      </div>
+
+      {tasks.length === 0 ? (
+        <section className="empty-state tasks-empty-state">
+          <div className="empty-task-mark" aria-hidden="true">
+            ✓
+          </div>
+          <h2>No tasks yet</h2>
+          <p>
+            Add one clear piece of work, link it to a course, and estimate how
+            many Focus sessions it may take.
+          </p>
+          <button className="button button--primary" onClick={onAdd} type="button">
+            <PlusIcon />
+            Add your first task
+          </button>
+        </section>
+      ) : (
+        <>
+          <section className="task-filters" aria-label="Task filters">
+            <div className="status-filter" aria-label="Filter by status">
+              {[
+                { id: "all", label: "All tasks" },
+                { id: "active", label: "Active" },
+                { id: "completed", label: "Completed" },
+              ].map((filter) => (
+                <button
+                  aria-pressed={statusFilter === filter.id}
+                  key={filter.id}
+                  onClick={() => setStatusFilter(filter.id)}
+                  type="button"
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+            <label className="course-filter">
+              <span className="sr-only">Filter by course</span>
+              <select
+                className="text-input select-input"
+                onChange={(event) => setCourseFilter(event.target.value)}
+                value={courseFilter}
+              >
+                <option value="all">All courses</option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          {filteredTasks.length === 0 ? (
+            <section className="filter-empty-state">
+              <h2>No tasks match these filters</h2>
+              <p>Try another status or course, or return to the full task list.</p>
+              {filtersAreActive && (
+                <button
+                  className="button button--secondary"
+                  onClick={clearFilters}
+                  type="button"
+                >
+                  Clear filters
+                </button>
+              )}
+            </section>
+          ) : (
+            <ul className="task-list">
+              {filteredTasks.map((task) => {
+                const course = courses.find(
+                  (candidate) => candidate.id === task.courseId,
+                );
+
+                if (!course) {
+                  return null;
+                }
+
+                return (
+                  <li
+                    className={`task-card${
+                      task.isCompleted ? " task-card--completed" : ""
+                    }`}
+                    key={task.id}
+                    style={{ "--course-color": course.color }}
+                  >
+                    <button
+                      aria-label={
+                        task.isCompleted
+                          ? `Reopen ${task.title}`
+                          : `Mark ${task.title} as completed`
+                      }
+                      className="task-status-button"
+                      onClick={() => onToggleComplete(task.id)}
+                      type="button"
+                    >
+                      <span aria-hidden="true">{task.isCompleted ? "✓" : ""}</span>
+                    </button>
+                    <div className="task-card-content">
+                      <div className="task-card-heading">
+                        <h2>{task.title}</h2>
+                        <span
+                          className={`task-status${
+                            task.isCompleted ? " task-status--completed" : ""
+                          }`}
+                        >
+                          {task.isCompleted ? "Completed" : "Active"}
+                        </span>
+                      </div>
+                      <div className="task-meta">
+                        <span className="task-course">
+                          <i aria-hidden="true" />
+                          {course.name}
+                        </span>
+                        <span>
+                          Estimated {task.estimatedPomodoros}{" "}
+                          {task.estimatedPomodoros === 1
+                            ? "Pomodoro"
+                            : "Pomodoros"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="task-actions">
+                      <button
+                        className="text-button"
+                        onClick={() => onEdit(task)}
+                        type="button"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="text-button text-button--danger"
+                        onClick={() => onDelete(task)}
+                        type="button"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
+      )}
+
+      <p className="memory-note">
+        Tasks are kept for this visit only and will clear when the page reloads.
+      </p>
+    </section>
+  );
+}
+
 function ProfileView({ profile, onSave }) {
   return (
     <section className="page-content profile-view" aria-labelledby="profile-page-title">
@@ -874,6 +1338,7 @@ function TimerView({
 export default function App() {
   const [courses, setCourses] = useState(loadCourses);
   const [profile, setProfile] = useState(loadProfile);
+  const [tasks, setTasks] = useState([]);
   const [activeView, setActiveView] = useState("timer");
   const [timerModeId, setTimerModeId] = useState(TIMER_MODES[0].id);
   const [timerSettings, setTimerSettings] = useState(loadTimerSettings);
@@ -885,7 +1350,11 @@ export default function App() {
   const [completionMessage, setCompletionMessage] = useState("");
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseToDelete, setCourseToDelete] = useState(null);
+  const [courseDeleteBlocked, setCourseDeleteBlocked] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const timerEndTimeRef = useRef(null);
   const completionHandledRef = useRef(false);
   const audioContextRef = useRef(null);
@@ -918,7 +1387,13 @@ export default function App() {
   }, [timerSettings]);
 
   useEffect(() => {
-    if (!isFormOpen && !courseToDelete) {
+    if (
+      !isFormOpen &&
+      !courseToDelete &&
+      !courseDeleteBlocked &&
+      !isTaskFormOpen &&
+      !taskToDelete
+    ) {
       return undefined;
     }
 
@@ -927,12 +1402,22 @@ export default function App() {
         setIsFormOpen(false);
         setEditingCourse(null);
         setCourseToDelete(null);
+        setCourseDeleteBlocked(null);
+        setIsTaskFormOpen(false);
+        setEditingTask(null);
+        setTaskToDelete(null);
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isFormOpen, courseToDelete]);
+  }, [
+    courseDeleteBlocked,
+    courseToDelete,
+    isFormOpen,
+    isTaskFormOpen,
+    taskToDelete,
+  ]);
 
   useEffect(() => {
     if (timerStatus !== "running") {
@@ -1004,11 +1489,82 @@ export default function App() {
     setIsFormOpen(true);
   }
 
+  function prepareCourseDeletion(course) {
+    const linkedTaskCount = countTasksForCourse(tasks, course.id);
+
+    if (linkedTaskCount > 0) {
+      setCourseDeleteBlocked({ course, linkedTaskCount });
+      return;
+    }
+
+    setCourseToDelete(course);
+  }
+
   function deleteCourse() {
+    const linkedTaskCount = countTasksForCourse(tasks, courseToDelete.id);
+
+    if (linkedTaskCount > 0) {
+      setCourseDeleteBlocked({ course: courseToDelete, linkedTaskCount });
+      setCourseToDelete(null);
+      return;
+    }
+
     setCourses((currentCourses) =>
       currentCourses.filter((course) => course.id !== courseToDelete.id),
     );
     setCourseToDelete(null);
+  }
+
+  function openAddTaskForm() {
+    setEditingTask(null);
+    setIsTaskFormOpen(true);
+  }
+
+  function closeTaskForm() {
+    setIsTaskFormOpen(false);
+    setEditingTask(null);
+  }
+
+  function saveTask(taskDetails) {
+    if (!courses.some((course) => course.id === taskDetails.courseId)) {
+      return;
+    }
+
+    if (editingTask) {
+      setTasks((currentTasks) =>
+        saveTaskInList(
+          currentTasks,
+          taskDetails,
+          editingTask.id,
+          createTaskId,
+        ),
+      );
+    } else {
+      setTasks((currentTasks) =>
+        saveTaskInList(currentTasks, taskDetails, null, createTaskId),
+      );
+    }
+
+    closeTaskForm();
+  }
+
+  function editTask(task) {
+    setEditingTask(task);
+    setIsTaskFormOpen(true);
+  }
+
+  function toggleTaskComplete(taskId) {
+    setTasks((currentTasks) => toggleTaskInList(currentTasks, taskId));
+  }
+
+  function deleteTask() {
+    setTasks((currentTasks) => deleteTaskFromList(currentTasks, taskToDelete.id));
+    setTaskToDelete(null);
+  }
+
+  function viewBlockedCourseTasks() {
+    setCourseDeleteBlocked(null);
+    setActiveView("tasks");
   }
 
   function prepareTimerSounds(force = false) {
@@ -1284,6 +1840,7 @@ export default function App() {
           {[
             { id: "dashboard", label: "Dashboard" },
             { id: "courses", label: "Courses" },
+            { id: "tasks", label: "Tasks" },
             { id: "timer", label: "Timer" },
             { id: "profile", label: "Profile" },
           ].map((item) => (
@@ -1299,7 +1856,7 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <span className="milestone-badge">Milestones 1–5</span>
+        <span className="milestone-badge">Milestones 1–6</span>
       </header>
 
       {activeView === "dashboard" && (
@@ -1313,8 +1870,19 @@ export default function App() {
         <CoursesView
           courses={courses}
           onAdd={openAddForm}
-          onDelete={setCourseToDelete}
+          onDelete={prepareCourseDeletion}
           onEdit={editCourse}
+        />
+      )}
+      {activeView === "tasks" && (
+        <TasksView
+          courses={courses}
+          onAdd={openAddTaskForm}
+          onDelete={setTaskToDelete}
+          onEdit={editTask}
+          onNavigate={setActiveView}
+          onToggleComplete={toggleTaskComplete}
+          tasks={tasks}
         />
       )}
       {activeView === "profile" && (
@@ -1341,7 +1909,7 @@ export default function App() {
 
       <footer>
         <span>Designed for calm, deliberate progress.</span>
-        <span>StudyForge v0.5</span>
+        <span>StudyForge v0.6</span>
       </footer>
 
       {isFormOpen && (
@@ -1352,6 +1920,29 @@ export default function App() {
           course={courseToDelete}
           onCancel={() => setCourseToDelete(null)}
           onConfirm={deleteCourse}
+        />
+      )}
+      {courseDeleteBlocked && (
+        <CourseDeleteBlocked
+          course={courseDeleteBlocked.course}
+          linkedTaskCount={courseDeleteBlocked.linkedTaskCount}
+          onClose={() => setCourseDeleteBlocked(null)}
+          onViewTasks={viewBlockedCourseTasks}
+        />
+      )}
+      {isTaskFormOpen && (
+        <TaskForm
+          courses={courses}
+          onCancel={closeTaskForm}
+          onSave={saveTask}
+          task={editingTask}
+        />
+      )}
+      {taskToDelete && (
+        <TaskDeleteConfirmation
+          onCancel={() => setTaskToDelete(null)}
+          onConfirm={deleteTask}
+          task={taskToDelete}
         />
       )}
     </main>
