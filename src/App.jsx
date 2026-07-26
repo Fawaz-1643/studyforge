@@ -4088,9 +4088,14 @@ export default function App() {
     setAppStatusMessage("Your profile was saved.");
   }
 
+  function navigateToView(nextView) {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    setActiveView(nextView);
+  }
+
   function viewBlockedCourseTasks() {
     setCourseDeleteBlocked(null);
-    setActiveView("tasks");
+    navigateToView("tasks");
   }
 
   function prepareTimerSounds(force = false) {
@@ -4568,7 +4573,7 @@ export default function App() {
       <header className="site-header">
         <button
           className="brand"
-          onClick={() => setActiveView("dashboard")}
+          onClick={() => navigateToView("dashboard")}
           type="button"
         >
           <BrandMark />
@@ -4584,7 +4589,7 @@ export default function App() {
               aria-current={activeView === item.id ? "page" : undefined}
               className="nav-button"
               key={item.id}
-              onClick={() => setActiveView(item.id)}
+              onClick={() => navigateToView(item.id)}
               ref={activeView === item.id ? activeNavButtonRef : null}
               type="button"
             >
@@ -4617,7 +4622,7 @@ export default function App() {
             courses={courses}
             focusCycleTarget={focusCycleTarget}
             onChangeTimerMode={changeTimerMode}
-            onNavigate={setActiveView}
+            onNavigate={navigateToView}
             onPauseTimer={pauseTimer}
             onQuickFocus={startDashboardQuickFocus}
             onResetTimer={resetTimer}
@@ -4654,7 +4659,7 @@ export default function App() {
               )
             }
             onEdit={editTask}
-            onNavigate={setActiveView}
+            onNavigate={navigateToView}
             onSetActiveTask={selectActiveTask}
             onToggleComplete={toggleTaskComplete}
             removingTaskIds={removingTaskIds}
@@ -4689,7 +4694,7 @@ export default function App() {
             onAddMinute={addMinuteToTimer}
             onCompleteTask={completeTask}
             onModeChange={changeTimerMode}
-            onNavigate={setActiveView}
+            onNavigate={navigateToView}
             onOpenPopout={openTimerPopout}
             onPause={pauseTimer}
             onReset={resetTimer}
