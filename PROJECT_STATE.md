@@ -2,8 +2,14 @@
 
 ## Current milestone
 
-Milestones 1-12 are complete. StudyForge version 1.0.0 is publicly released at
+Milestones 1-12 are publicly released. The Milestone 12.5 architecture
+stabilization is implemented in the version 1.0.1 working tree and is awaiting
+manual browser acceptance, commit approval, and deployment approval.
+
+The public application remains the version 1.0.0 release at
 [studyforge-gray-eight.vercel.app](https://studyforge-gray-eight.vercel.app).
+Milestone 13 is next after 12.5 is accepted and released; no Milestone 13
+functionality has been started.
 
 ## Technical foundation
 
@@ -332,6 +338,61 @@ Milestones 1-12 are complete. StudyForge version 1.0.0 is publicly released at
   updates to the saved university or field of study without adding accounts or
   cloud persistence.
 
+### Milestone 12.5 - Architecture stabilization
+
+- The released interface, accessibility behavior, business rules, storage key,
+  schema version 4, migrations, visual styling, and six-view navigation remain
+  unchanged.
+- The former root `App.jsx` implementation was separated into an application
+  coordinator, application shell, feature views, feature dialogs, shared UI,
+  pure domain rules, Timer hooks, storage modules, and ordered stylesheets.
+- `src/app/App.jsx` now owns durable application state and coordinates
+  cross-feature mutations instead of implementing every feature's markup,
+  calculations, persistence validation, and Timer internals.
+- `src/app/AppShell.jsx` owns the navigation shell, active indicator, header
+  Level/XP progress, recovery feedback, live status, main region, and footer.
+- Dashboard, Courses, Tasks, Timer, History, Profile, and reward presentation
+  now live in feature-focused folders.
+- Task, course, statistics, reward, formatting, ID, Timer-transition, and
+  natural Focus-completion rules now live in pure domain modules without React,
+  DOM, or direct storage access.
+- Storage schema/defaults, record normalization, migrations, and guarded load
+  and save operations now have separate responsibilities under `src/storage`.
+- The existing `studyforge:app-state` key, schema 4 record, versions 1-4
+  migrations, legacy split keys, no-retroactive-bonus rule, malformed-data
+  recovery, and unavailable-storage fallback remain compatible.
+- The Timer keeps a single in-memory engine based on target timestamps and
+  `Date.now()`. Audio and fullscreen/orientation presentation are isolated from
+  countdown and transition rules.
+- Timer outcomes now have an explicit extension boundary for natural, early,
+  skipped, cancelled, and cycle-reset outcomes. Only natural Focus completion
+  is creditable in 1.0.1.
+- One guarded natural Focus event is sent to one pure completion orchestrator,
+  which returns the next tasks, one History record, rewards, and existing
+  feedback summary. Other Timer actions cannot enter that path.
+- The original stylesheet was split by responsibility while preserving selector
+  names, declaration order, breakpoints, reduced-motion behavior, and the exact
+  production CSS asset hash.
+- The root entry point now imports the application coordinator and the ordered
+  stylesheet entry file.
+- A dependency-graph check covers all JavaScript and JSX modules and reports no
+  circular imports.
+- A lightweight regression suite now protects task rules, Timer transitions,
+  cycle reset, natural-completion credit policy, exactly-once consumption,
+  Focus outcome orchestration, statistics, rewards, schema versions 1-4, legacy
+  keys, valid-view restoration, malformed data, storage failure, and
+  memory-only countdown exclusion.
+- Vitest was approved for these pure checks, but the package registry was
+  unavailable in the implementation environment. The same focused coverage was
+  added with Node's built-in test runner and no new dependency; a later
+  Vitest migration remains optional rather than a runtime compatibility need.
+- `docs/ARCHITECTURE.md` records dependency direction, folder ownership,
+  persistence responsibilities, the Timer and natural-completion boundary, and
+  the intended implementation homes for Milestones 13-18.
+- No deadline, priority, task type, notes, goal, heatmap, import/export, PWA,
+  notification, semester, calendar, recommendation, account, backend, social,
+  or other future product feature was added.
+
 ## Current persistence
 
 Stored together in one versioned `localStorage` record:
@@ -396,66 +457,50 @@ failures fall back to in-memory operation.
 
 ## Verification
 
-- Latest production command: `npm run build`
-- Latest verified status: production release checks passing on July 27, 2026
-- Build result: 33 modules transformed; production bundle completed
-  successfully in 426 ms
-- Production output: 0.65 kB HTML, 82.54 kB CSS, and 295.26 kB JavaScript
-  before gzip
-- Focused utility checks passed for valid and invalid task input, fixed
-  estimates, completion filtering, supported storage migration, no retroactive
-  Focus bonus, fractional XP restoration, malformed-data fallback,
-  storage-access failure, one-time task bonuses, History snapshots, statistics,
-  and level progression
-- The pre-release browser audit passed all six views at wide desktop, tablet,
-  and narrow mobile widths without horizontal page overflow or console errors
-- Fresh-origin Dashboard landing, restoration of every valid last-open view,
-  and StudyForge brand navigation back to Dashboard passed
-- The Dashboard identity setup and edit dialog passed desktop and mobile layout,
-  initial-focus, focus-containment, Escape, inert-background, scroll-lock,
-  focus-restoration, save, immediate tile update, and reload-persistence checks
-- The custom course filter passed Enter, Home, End, and Escape selection
-  checks; destructive dialogs retained safe initial focus
-- A natural one-minute Focus session created exactly one History record,
-  incremented the selected task exactly once, and awarded the expected
-  minute-based and 10% completion XP exactly once
-- Pause, add-minute, add-cycle, reset, next-session, interrupted-reload, and
-  fullscreen-control checks preserved History, task progress, XP, and the
-  memory-only countdown rules
-- The Timer ring measured exactly centred at laptop, tablet, and mobile widths
-  with no horizontal overflow; fullscreen remained fixed and non-scrolling,
-  and the simulated small-touch landscape fallback exposed a visible
-  rotate-device message and fullscreen exit control
-- Seven privacy-safe repository screenshots were captured and visually checked
-  for readability, current interface accuracy, relative paths, and absence of
-  private data or browser chrome
-- Vercel detected the Vite application correctly with project root `./`, build
-  command `npm run build`, output directory `dist`, and no environment
-  variables
-- The first production deployment reached Vercel `Ready` status from release
-  source commit `f424dffa0d57d35873b87b71b51b9f4153b0987f`
-- The public application passed all six views at wide desktop and narrow mobile
-  widths without horizontal page or navigation overflow
-- A fresh production origin opened Dashboard, direct reloads succeeded, the
-  last valid view restored, and StudyForge brand navigation returned home
-- Profile setup updated the production Dashboard immediately and survived a
-  normal reload through device-local browser storage
-- A running production countdown returned to a fresh idle `25:00` Focus session
-  after reload without adding History, task progress, or XP
-- The public browser console remained free of warnings and errors
-- The production project has zero function invocations and adds no account
-  system, backend, database, environment variables, or cloud persistence
-- Malformed-data and unavailable-storage fallback checks passed against the
-  exact release source before deployment; the deployed bundle is built from
-  that unchanged commit
-- Public URL:
+- Verification date: July 27, 2026
+- `npm test`: 19 tests passed, 0 failed, 0 skipped
+- Automated coverage includes task validation and filtering, fixed estimates,
+  natural Focus orchestration with and without a task, one-time task rewards,
+  fractional XP, statistics, Timer transitions, Long Break selection, reset
+  decisions, extension bounds, credited-outcome policy, exactly-once natural
+  completion, schema versions 1-4, legacy keys, all valid active views,
+  malformed JSON, unavailable storage, and memory-only countdown exclusion.
+- `npm run build`: 68 modules transformed successfully in 410 ms
+- Production output before gzip: 0.65 kB HTML, 82.54 kB CSS, and 300.20 kB
+  JavaScript
+- The production CSS file remains `index-C8KKghh8.css`, exactly matching the
+  pre-refactor baseline hash and size.
+- A static dependency-graph audit checked 44 JavaScript/JSX files and 91 local
+  imports with no circular dependencies.
+- `git diff --check` passes and `npm ls --depth=0` reports a valid dependency
+  tree.
+- The normal Vite preview server and the browser-controlled local preview were
+  blocked from binding a localhost port by the managed workspace (`EPERM`).
+  The browser also rejected a self-contained data URL under its URL safety
+  policy. No policy bypass or remote deployment was attempted.
+- Because the current 1.0.1 bundle could not be opened in the managed browser,
+  responsive layout, live focus behavior, fullscreen/orientation behavior,
+  sound, and browser `localStorage` interaction remain pending manual
+  acceptance. The earlier version 1.0.0 release browser results remain
+  historical evidence, not a substitute for testing this refactor candidate.
+- Manual acceptance must cover all six views at wide desktop, tablet, and narrow
+  mobile widths; navigation and scroll reset; course, task, profile, dialog,
+  dropdown, and persistence flows; Timer idle/running/paused/resumed, next,
+  reset, settings, auto-start, add-minute, add-cycle, Long Break, fullscreen,
+  rotate fallback, and interrupted reload; natural Focus with and without a
+  selected task; History/reward exactly-once behavior; keyboard, focus, live
+  region, reduced-motion, wrapping, touch-target, overflow, and console checks.
+- The live public URL remains
   [studyforge-gray-eight.vercel.app](https://studyforge-gray-eight.vercel.app)
-- Project version: 1.0.0
+  on version 1.0.0 until commit and production deployment approval.
 
 ## Release status
 
-Milestone 12 is complete. The remaining repository action is the
-documentation-only follow-up that records the public URL and these production
-verification results.
+Milestone 12.5 implementation is complete in the working tree. It has not been
+committed, pushed, or deployed. Manual browser acceptance is the remaining
+verification gate.
 
-No Stage 1 or Stage 2 expansion work is part of this release.
+After acceptance, the required sequence is explicit commit approval, then a
+separate production push approval because pushing `main` automatically deploys
+to Vercel. Milestone 13 is the next planned milestone and must not begin as part
+of this release.

@@ -5,11 +5,12 @@ into deliberate Focus sessions. It combines course-linked tasks, a reliable
 Pomodoro timer, study history, useful statistics, and restrained progress
 rewards in a responsive dark interface.
 
-**Release:** 1.0.0
+**Source version:** 1.0.1
 
-**Status:** Milestones 1-12
+**Status:** Milestones 1-12.5 implemented; manual acceptance and release pending
 
 **Live app:** [studyforge-gray-eight.vercel.app](https://studyforge-gray-eight.vercel.app)
+(currently the 1.0.0 production release)
 
 > StudyForge has no accounts, backend, database, analytics service, or cloud
 > sync. Each visitor's saved data stays in that browser's `localStorage`.
@@ -185,20 +186,34 @@ npm run preview
 `npm run build` creates the optimized static application in `dist/`.
 The included `vercel.json` uses the same command and output directory.
 
+## Tests
+
+```bash
+npm test
+```
+
+The lightweight regression suite uses Node's built-in test runner and covers
+pure task, timer, natural-completion, rewards, statistics, storage,
+normalization, and migration behavior. Visual layout and browser accessibility
+still require the practical manual checklist documented in
+[PROJECT_STATE.md](PROJECT_STATE.md).
+
 ## Project structure
 
 ```text
 studyforge/
 ├── docs/
+│   ├── ARCHITECTURE.md    # Module ownership and extension boundaries
 │   └── screenshots/       # Privacy-safe public interface captures
 ├── src/
-│   ├── App.jsx            # Application views, timer engine, and interactions
-│   ├── main.jsx           # React entry point
-│   ├── persistence.js     # Versioned storage, validation, and migration
-│   ├── rewardUtils.js     # XP, levels, streaks, achievements, and repair
-│   ├── statisticsUtils.js # Session records and study statistics
-│   ├── taskUtils.js       # Task validation, filtering, and list rules
-│   └── styles.css         # Responsive visual and motion system
+│   ├── app/               # Application coordinator, shell, and overlays
+│   ├── components/        # Shared icons and accessible UI
+│   ├── domain/            # Pure task, timer, reward, and statistics rules
+│   ├── features/          # Dashboard, course, task, timer, History, and Profile UI
+│   ├── hooks/             # Shared React interaction hooks
+│   ├── storage/           # Schema, normalization, migration, load, and save
+│   ├── styles/            # Ordered base, feature, responsive, and motion CSS
+│   └── main.jsx           # React entry point
 ├── index.html
 ├── package.json
 ├── PROJECT_STATE.md
@@ -206,12 +221,18 @@ studyforge/
 └── vite.config.js
 ```
 
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for dependency direction,
+state ownership, the Timer outcome boundary, persistence compatibility, and
+the intended homes for Milestones 13-18.
+
 ## Release scope
 
-Version 1.0.0 is the completed Milestones 1-12 release. It intentionally does
-not include accounts, authentication, cloud sync, a backend, deadlines,
-priorities, recurring tasks, calendar features, advanced recommendations,
-social features, notifications, backup/import/export, or PWA installability.
+Version 1.0.1 is the behavior-preserving Milestone 12.5 architecture
+stabilization of the completed 1.0.0 product. It adds no user-facing product
+functionality. It intentionally does not include accounts, authentication,
+cloud sync, a backend, deadlines, priorities, recurring tasks, calendar
+features, advanced recommendations, social features, notifications,
+backup/import/export, or PWA installability.
 
 The public app requires an internet connection to open or reload reliably.
 Once loaded, its core planning and timer behavior does not depend on a backend.
@@ -220,9 +241,10 @@ Once loaded, its core planning and timer behavior does not depend on a backend.
 
 The product was developed milestone by milestone, from its visual foundation
 through courses, profile, timer, tasks, unified persistence, History,
-statistics, restrained rewards, accessibility polish, interface expansion, and
-the 1.0 release. [PROJECT_STATE.md](PROJECT_STATE.md) contains the detailed
-implementation and migration record.
+statistics, restrained rewards, accessibility polish, interface expansion,
+the 1.0 release, and the internal Milestone 12.5 modular refactor.
+[PROJECT_STATE.md](PROJECT_STATE.md) contains the detailed implementation,
+verification, and migration record.
 
 The Pomodoro Technique name and method belong to their respective owner.
 StudyForge is an independent educational project and is not affiliated with the

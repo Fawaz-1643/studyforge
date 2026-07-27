@@ -1,0 +1,318 @@
+@media (prefers-reduced-motion: no-preference) {
+  .page-content {
+    animation: page-enter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .status-dot {
+    animation: breathe 2.8s ease-in-out infinite;
+  }
+
+  .timer-panel,
+  .dashboard-quick-timer,
+  .timer-dial,
+  .timer-dial-track,
+  .timer-dial-progress,
+  .timer-dial-mode,
+  .timer-mode-button {
+    transition:
+      --timer-color 260ms ease,
+      color 220ms ease,
+      border-color 220ms ease,
+      background-color 220ms ease,
+      stroke 220ms ease,
+      filter 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .timer-dial--running {
+    animation: timer-breathe 4.6s ease-in-out infinite;
+  }
+
+  .button,
+  .icon-button,
+  .text-button,
+  .timer-mode-button,
+  .timer-corner-control,
+  .timer-dial-primary,
+  .task-status-button,
+  .themed-select-trigger,
+  .themed-select-option {
+    transition:
+      transform 150ms ease,
+      color 150ms ease,
+      border-color 150ms ease,
+      background 150ms ease,
+      box-shadow 150ms ease,
+      opacity 150ms ease;
+  }
+
+  .button:active:not(:disabled),
+  .icon-button:active:not(:disabled),
+  .timer-mode-button:active:not(:disabled),
+  .timer-corner-control:active:not(:disabled),
+  .timer-dial-primary:active:not(:disabled),
+  .task-status-button:active:not(:disabled),
+  .themed-select-trigger:active:not(:disabled),
+  .themed-select-option:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .dashboard-course-card,
+  .profile-stat-card,
+  .profile-rhythm dl > div {
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .dashboard-course-card:hover {
+    border-color: color-mix(
+      in srgb,
+      var(--course-color) 38%,
+      rgba(255, 255, 255, 0.08)
+    );
+    box-shadow:
+      0 18px 42px rgba(0, 0, 0, 0.24),
+      0 0 24px color-mix(in srgb, var(--course-color) 10%, transparent);
+    transform: translateY(-4px);
+  }
+
+  .dashboard-course-card:hover .dashboard-course-progress span {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--course-color) 72%, transparent);
+  }
+
+  .profile-stat-card:hover,
+  .profile-rhythm dl > div:hover {
+    border-color: rgba(155, 135, 245, 0.2);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.17);
+    transform: translateY(-3px);
+  }
+
+  .profile-stat-card--level:hover,
+  .profile-stat-card--achievement:hover {
+    border-color: rgba(242, 185, 95, 0.27);
+  }
+
+  .dashboard-course-progress span,
+  .reward-progress-track > span,
+  .mini-level-track > span,
+  .profile-stat-progress i {
+    transform-origin: left;
+    animation: progress-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .themed-select-list {
+    transform-origin: top;
+    animation: dropdown-open 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .themed-select-option--highlighted {
+    transform: translateX(2px);
+  }
+
+  .pomodoro-orbit--outer {
+    animation: orbit-clockwise 34s linear infinite;
+  }
+
+  .pomodoro-orbit--inner {
+    animation: orbit-counterclockwise 42s linear infinite;
+  }
+
+  .pomodoro-visual-note--focus {
+    animation: visual-note-float 5s ease-in-out infinite;
+  }
+
+  .pomodoro-visual-note--rest {
+    animation: visual-note-float 5.8s ease-in-out -2s infinite;
+  }
+
+  .dashboard-trend-track i,
+  .trend-bar {
+    transform-origin: bottom;
+    animation: chart-grow 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .achievement-card--earned .achievement-mark {
+    transition:
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .achievement-card--earned:hover .achievement-mark {
+    box-shadow: 0 0 20px rgba(242, 185, 95, 0.18);
+    transform: translateY(-1px);
+  }
+
+  .task-card,
+  .task-card h2,
+  .task-status-button,
+  .task-status-button span {
+    transition:
+      color 180ms ease,
+      opacity 180ms ease,
+      background 180ms ease,
+      border-color 180ms ease,
+      transform 180ms ease;
+  }
+
+  .task-card--completed .task-status-button span {
+    animation: task-check-in 210ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .task-card--removing {
+    pointer-events: none;
+    animation: task-remove 190ms ease-in forwards;
+  }
+
+  .modal-backdrop {
+    animation: fade-in 140ms ease-out;
+  }
+
+  .modal {
+    animation: lift-in 210ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .focus-summary-symbol::before,
+  .focus-summary-symbol::after {
+    position: absolute;
+    inset: -13px;
+    border: 1px solid rgba(242, 185, 95, 0.38);
+    border-radius: 50%;
+    content: "";
+    animation: reward-burst 650ms ease-out both;
+    pointer-events: none;
+  }
+
+  .focus-summary-symbol::after {
+    inset: -25px;
+    animation-delay: 90ms;
+  }
+
+  @keyframes breathe {
+    50% {
+      box-shadow: 0 0 0 7px rgba(97, 214, 167, 0.035);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes lift-in {
+    from {
+      transform: translateY(8px) scale(0.985);
+    }
+  }
+
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(7px);
+    }
+  }
+
+  @keyframes timer-breathe {
+    50% {
+      filter: drop-shadow(
+        0 20px 48px color-mix(in srgb, var(--timer-color) 26%, transparent)
+      );
+      transform: scale(1.006);
+    }
+  }
+
+  @keyframes progress-reveal {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes dropdown-open {
+    from {
+      opacity: 0;
+      transform: translateY(-5px) scaleY(0.96);
+    }
+  }
+
+  @keyframes orbit-clockwise {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes orbit-counterclockwise {
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+
+  @keyframes visual-note-float {
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes chart-grow {
+    from {
+      opacity: 0.35;
+      transform: scaleY(0);
+    }
+  }
+
+  @keyframes task-check-in {
+    from {
+      opacity: 0;
+      transform: scale(0.35) rotate(-18deg);
+    }
+  }
+
+  @keyframes task-remove {
+    to {
+      height: 0;
+      min-height: 0;
+      margin: 0;
+      padding-block: 0;
+      border-width: 0;
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  @keyframes reward-burst {
+    from {
+      opacity: 0.8;
+      transform: scale(0.45);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(1.45);
+    }
+  }
+
+  @keyframes nav-icon-settle {
+    from {
+      opacity: 0.55;
+      transform: translateY(2px) scale(0.88);
+    }
+  }
+}
+
+@media (min-height: 700px) {
+  .modal:has(.themed-select-trigger[aria-expanded="true"]) {
+    overflow: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

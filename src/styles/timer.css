@@ -1,0 +1,685 @@
+.active-task-panel,
+.timer-panel {
+  width: min(760px, 100%);
+  margin-inline: auto;
+  padding: 27px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  backdrop-filter: blur(18px);
+}
+
+.active-task-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 20px;
+  margin-top: 48px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 0 0, rgba(155, 135, 245, 0.1), transparent 45%),
+    var(--surface);
+}
+
+.active-task-panel:has(.themed-select-trigger[aria-expanded="true"]) {
+  z-index: 30;
+}
+
+.timer-view .active-task-panel {
+  margin-top: 18px;
+}
+
+.active-task-heading,
+.active-task-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.active-task-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 13px;
+}
+
+.active-task-actions .button {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 0.76rem;
+}
+
+.active-task-heading .section-kicker {
+  margin-bottom: 8px;
+}
+
+.active-task-heading h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+}
+
+.active-task-details {
+  padding: 14px 15px;
+  border: 1px solid color-mix(in srgb, var(--course-color) 22%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--course-color) 7%, transparent);
+}
+
+.active-task-details strong {
+  color: #eeeaff;
+  font-size: 0.82rem;
+}
+
+.active-task-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.active-task-select {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+.active-task-select > span {
+  color: #9297a7;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.active-task-link {
+  justify-self: start;
+}
+
+.timer-panel {
+  width: min(900px, 100%);
+  --timer-color: #aa92ff;
+  margin-top: 14px;
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      color-mix(in srgb, var(--timer-color) 15%, transparent),
+      transparent 52%
+    ),
+    var(--surface);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.24);
+}
+
+.timer-panel[data-timer-mode="short-break"] {
+  --timer-color: #51d2bd;
+}
+
+.timer-panel[data-timer-mode="long-break"] {
+  --timer-color: #5b9cf6;
+}
+
+.timer-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  background: rgba(8, 10, 16, 0.45);
+}
+
+.timer-fullscreen-row {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 0;
+}
+
+.timer-fullscreen-button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--timer-color) 20%, rgba(255, 255, 255, 0.06));
+  border-radius: 14px;
+  color: color-mix(in srgb, var(--timer-color) 38%, white);
+  background: color-mix(in srgb, var(--timer-color) 7%, rgba(8, 10, 16, 0.52));
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transition:
+    transform 150ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.timer-fullscreen-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--timer-color) 42%, transparent);
+  background: color-mix(in srgb, var(--timer-color) 13%, rgba(8, 10, 16, 0.52));
+  transform: translateY(-1px);
+}
+
+.timer-fullscreen-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.timer-fullscreen-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.fullscreen-icon {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  background:
+    linear-gradient(currentColor, currentColor) 0 0 / 7px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 0 / 2px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 7px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 0 / 2px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 7px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 2px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 7px 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 100% / 2px 7px no-repeat;
+}
+
+.fullscreen-icon--exit {
+  transform: rotate(180deg) scale(0.78);
+}
+
+.timer-rotate-message {
+  display: none;
+}
+
+.timer-panel:fullscreen {
+  display: grid;
+  width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: clamp(20px, 3vw, 44px);
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-sizing: border-box;
+  background:
+    radial-gradient(
+      circle at 50% 44%,
+      color-mix(in srgb, var(--timer-color) 18%, transparent),
+      transparent 42%
+    ),
+    #0b0d15;
+  grid-template-rows: max-content minmax(0, 1fr) max-content max-content;
+}
+
+.timer-panel:fullscreen::backdrop {
+  background: #090b12;
+}
+
+.timer-panel:fullscreen .timer-stage {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 14px clamp(78px, 9vw, 132px) 50px;
+  box-sizing: border-box;
+}
+
+.timer-panel:fullscreen .timer-dial {
+  width: min(640px, 70vmin, 100%);
+}
+
+.timer-panel:fullscreen .completion-message {
+  align-self: end;
+}
+
+.timer-mode-button {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #7f8494;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.timer-mode-button:hover {
+  color: #d7d9e1;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.timer-mode-button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--timer-color) 34%, transparent);
+  color: color-mix(in srgb, var(--timer-color) 28%, white);
+  background: color-mix(in srgb, var(--timer-color) 13%, transparent);
+}
+
+.timer-stage {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 620px;
+  padding: 26px 96px 54px;
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  text-align: center;
+}
+
+.timer-dial {
+  position: relative;
+  display: grid;
+  width: min(510px, 100%);
+  max-width: 100%;
+  aspect-ratio: 1;
+  justify-self: center;
+  place-items: center;
+  color: var(--timer-color);
+  filter: drop-shadow(
+    0 16px 38px color-mix(in srgb, var(--timer-color) 14%, transparent)
+  );
+}
+
+.timer-dial-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.timer-dial-track,
+.timer-dial-progress {
+  fill: none;
+  stroke-width: 8;
+}
+
+.timer-dial-track {
+  stroke: color-mix(in srgb, var(--timer-color) 13%, rgba(255, 255, 255, 0.055));
+}
+
+.timer-dial-progress {
+  stroke: var(--timer-color);
+  stroke-dasharray: 100;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 1s linear;
+  filter: drop-shadow(
+    0 0 7px color-mix(in srgb, var(--timer-color) 52%, transparent)
+  );
+}
+
+.timer-dial-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+
+.timer-dial-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 25px;
+  padding: 7px 11px;
+  border: 1px solid color-mix(in srgb, var(--timer-color) 22%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--timer-color) 42%, white);
+  background: color-mix(in srgb, var(--timer-color) 8%, rgba(8, 10, 16, 0.5));
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.timer-dial-mode i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--timer-color);
+  box-shadow: 0 0 10px var(--timer-color);
+}
+
+.timer-time {
+  margin: 0 0 26px;
+  color: #fbfaff;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: clamp(3.5rem, 7.6vw, 5.65rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+  text-shadow: 0 12px 50px color-mix(in srgb, var(--timer-color) 18%, transparent);
+}
+
+.timer-dial-primary {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 18px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--timer-color) 54%, white 10%);
+  border-radius: 50%;
+  place-items: center;
+  color: #fff;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--timer-color) 82%, white 7%),
+      color-mix(in srgb, var(--timer-color) 68%, #35255f)
+    );
+  box-shadow:
+    0 11px 30px color-mix(in srgb, var(--timer-color) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+}
+
+.timer-dial-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.timer-dial-primary:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  opacity: 0.45;
+}
+
+.play-symbol {
+  width: 0;
+  height: 0;
+  margin-left: 4px;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 11px solid currentColor;
+}
+
+.pause-symbol {
+  width: 12px;
+  height: 15px;
+  border-right: 4px solid currentColor;
+  border-left: 4px solid currentColor;
+}
+
+.timer-state {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.cycle-progress {
+  position: absolute;
+  bottom: 13px;
+  left: 50%;
+  width: min(100%, 460px);
+  margin: 0;
+  transform: translateX(-50%);
+  color: #74798a;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.timer-corner-control {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  min-width: 78px;
+  min-height: 66px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--timer-color) 20%, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  place-content: center;
+  gap: 2px;
+  color: color-mix(in srgb, var(--timer-color) 46%, white);
+  background: color-mix(in srgb, var(--timer-color) 7%, rgba(9, 11, 18, 0.86));
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.timer-corner-control:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--timer-color) 42%, transparent);
+  background: color-mix(in srgb, var(--timer-color) 13%, rgba(9, 11, 18, 0.86));
+}
+
+.timer-corner-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.timer-corner-control strong {
+  color: #f4f1ff;
+  font-size: 1rem;
+}
+
+.timer-corner-control span {
+  color: #8e93a4;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.timer-corner-control--top-left,
+.timer-corner-control--top-right {
+  top: 38px;
+}
+
+.timer-corner-control--bottom-left,
+.timer-corner-control--bottom-right {
+  bottom: 48px;
+}
+
+.timer-corner-control--top-left,
+.timer-corner-control--bottom-left {
+  left: 8px;
+}
+
+.timer-corner-control--top-right,
+.timer-corner-control--bottom-right {
+  right: 8px;
+}
+
+.completion-message {
+  min-height: 43px;
+  margin: 0 auto 2px;
+  padding: 11px 15px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: transparent;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.completion-message:not(.completion-message--visible) {
+  min-height: 0;
+  margin: 0;
+  padding-block: 0;
+}
+
+.completion-message--visible {
+  border-color: rgba(97, 214, 167, 0.2);
+  color: #a9e8ce;
+  background: rgba(97, 214, 167, 0.07);
+}
+
+.timer-dial--compact {
+  width: min(360px, 78vw);
+  margin: 28px auto 22px;
+}
+
+.timer-dial--compact .timer-time {
+  font-size: clamp(2.9rem, 11.5vw, 4.05rem);
+}
+
+.timer-dial--compact .timer-dial-mode {
+  margin-bottom: 14px;
+}
+
+.timer-dial--compact .timer-dial-primary {
+  width: 48px;
+  height: 48px;
+}
+
+.timer-settings {
+  width: min(760px, 100%);
+  margin: 18px auto 0;
+  padding: 27px;
+  border: 1px solid var(--surface-border);
+  border-radius: 20px;
+  background: rgba(20, 23, 34, 0.62);
+  backdrop-filter: blur(18px);
+}
+
+.timer-settings-heading,
+.timer-settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.timer-settings-heading {
+  margin-bottom: 24px;
+}
+
+.timer-settings-heading h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+}
+
+.timer-duration-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.number-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.number-input-wrap > span {
+  position: absolute;
+  top: 50%;
+  right: 44px;
+  color: #686d7d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.timer-number-input {
+  padding-right: 112px;
+}
+
+.timer-settings-actions {
+  margin-top: 18px;
+}
+
+.form-message {
+  margin: 0;
+  color: #737889;
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.form-message--error {
+  color: #ef9b96;
+}
+
+.timer-toggles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.toggle-row {
+  position: relative;
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  background: rgba(8, 10, 16, 0.34);
+  cursor: pointer;
+}
+
+.toggle-row > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.toggle-row strong {
+  color: #d2d4dd;
+  font-size: 0.78rem;
+}
+
+.toggle-row small {
+  color: #717687;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.toggle-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.toggle-control {
+  position: relative;
+  width: 39px;
+  height: 23px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: #292d3a;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.toggle-control::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #8b909e;
+  content: "";
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.toggle-row input:checked + .toggle-control {
+  border-color: rgba(155, 135, 245, 0.52);
+  background: rgba(155, 135, 245, 0.25);
+}
+
+.toggle-row input:checked + .toggle-control::after {
+  background: #c7bcff;
+  transform: translateX(16px);
+}
+
+.toggle-row:has(input:focus-visible) .toggle-control {
+  outline: 3px solid rgba(192, 179, 255, 0.48);
+  outline-offset: 3px;
+}
